@@ -17,7 +17,7 @@
 [ \t]+    		{printf(" ");}
 [a-zA-z]+   	{ECHO;wordCount=wordCount+1;}
 \n+         	{printf("\n");lineCount=lineCount+1;}
-
+<<EOF>>         {printf("\n");lineCount=lineCount+1;return 0;}
 
 %%
 
