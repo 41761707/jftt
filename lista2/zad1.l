@@ -41,6 +41,6 @@ int main(int argc, char *argv[])
     fclose(yyin);
     printf("\n");
 	printf("Liczba slow: %d\n",wordCount);
-	printf("Liczba linii: %d\n",lineCount);
+	printf("Liczba linii: %d",lineCount);
     return 0;
 }
