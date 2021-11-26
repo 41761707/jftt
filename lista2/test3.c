@@ -21,7 +21,8 @@ int baz();
 volatile int g_global;
 
 //! Main
-int main(int argc, const char* argv)
+int ma\
+in(int argc, const char* argv)
 {
     printf("/* foo bar");
     //*/ bar();

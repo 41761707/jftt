@@ -10,11 +10,15 @@
 
 %}
 
+%x Detect
+
 
 %%
 ^[ \t]+(\n)?    ;
 [ \t]+(\n)?$    ;
-[ \t]+    		{printf(" ");}
+[ \t]+    		BEGIN(Detect);
+<Detect>.|\n    printf(" ");BEGIN(INITIAL);
+<Detect><<EOF>> ;BEGIN(INITIAL);
 [a-zA-z]+   	{ECHO;wordCount=wordCount+1;}
 \n+         	{printf("\n");lineCount=lineCount+1;}
 

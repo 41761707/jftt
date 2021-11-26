@@ -22,12 +22,11 @@ int main(int argc, const char* argv)
 {
     printf("/* foo bar");
     
-        
-    foo();
+        baz();
     
-/\
 
-    foo();
+    baz();
+
 
     return 1;
 }

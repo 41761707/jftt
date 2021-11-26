@@ -15,6 +15,7 @@
 %x ATTRIBUTE
 %x INCLUDE
 
+
 %%
 
 \"              {ECHO;BEGIN(ATTRIBUTE);}
@@ -41,7 +42,7 @@
 <commentMulti>\n             ;
 <commentMulti>"*"+"/"        BEGIN(INITIAL);
 
-"//"                         BEGIN(commentSingle);
+"//"|"/\\\n/"                         BEGIN(commentSingle);
 <commentSingle>.             ;
 <commentSingle>\n            BEGIN(INITIAL);
 
@@ -49,8 +50,10 @@
 <commentSingleDOC>.             {if(docs) ECHO;}
 <commentSingleDOC>\n            {if(docs) ECHO;BEGIN(INITIAL);}
 
-
+<INITIAL,commentSingle,commentSingleDOC>"\\\n"   ;
 %%
+
+
 
 
 int yywrap(){}
