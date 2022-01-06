@@ -1,0 +1,9 @@
+VAR
+	n
+BEGIN
+	READ n;
+	WHILE n LE 10 DO
+		WRITE n;
+		n ASSIGN n PLUS 1;
+	ENDWHILE
+END 
