@@ -1,0 +1,124 @@
+%code requires
+{
+    #include <string>
+    #include <vector>
+}
+%{
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <string>
+	#include "ST.hpp" 
+	#include "SM.hpp" 
+	#include "CG.hpp" 
+	#define YYDEBUG 1 
+	extern int yylineno;
+	void yyerror(char *s);
+	int yylex();
+	int errors;
+%}
+%union sem_rec
+{
+	std::string *pidentifier;
+    long long int num;
+    struct variable *variable;
+    struct condition *cond;
+    std::vector<std::string> *command;
+}
+%start program
+%token <num> num
+%token <pidentifier> pidentifier
+%token FOR
+%token IF WHILE REPEAT DO 
+%token VAR BEGINNER END
+%token THEN ELSE ENDIF FROM TO DOWNTO ENDFOR ENDWHILE ENDDO
+%token UNTIL
+%token READ WRITE       
+%token LE GE LEQ GEQ EQ NEQ
+%token PLUS MINUS TIMES DIV MOD
+%token ASSIGN
+%token ERROR 
+
+
+%type <variable> value
+%type <variable> identifier
+%type <variable> expression
+%type <cond> condition
+%type <command> command
+%type <command> commands
+
+
+%left ADD SUB
+%left MUL DIV MOD
+
+%%
+program:
+		VAR declarations BEGINNER {init_registers();}
+		 commands END 				{halt();}		
+		| BEGINNER 								{init_registers();}
+		commands END   							{halt();}						
+;
+declarations:
+		declarations ',' pidentifier						{init_var(*$3,yylineno);}
+		|  declarations ',' pidentifier '[' num ':' num ']'	{init_array(*$3,$5,$7,yylineno);}
+		|  pidentifier										{init_var(*$1,yylineno);}
+		|  pidentifier '[' num ':' num ']'					{init_array(*$1,$3,$5,yylineno);}
+;
+commands:
+		commands command 									
+		| command 											
+;
+command: 
+		identifier ASSIGN expression ';'					{assign($1,$3,yylineno);}
+		|  IF condition THEN commands ELSE commands ENDIF	{}
+		|  IF condition THEN commands ENDIF					{func_if($2,yylineno);}
+		|  WHILE condition DO commands ENDWHILE				{}
+		|  REPEAT commands UNTIL condition ';'				{}
+		|  FOR pidentifier FROM value TO value DO commands ENDFOR	{}
+		|  FOR pidentifier FROM value DOWNTO value DO commands ENDFOR {}
+		|  READ  identifier ';'								{read($2,yylineno);}
+		|  WRITE value ';'									{write($2,yylineno);}
+;
+expression: 
+		value												{func_val($1,yylineno);}
+		|  value PLUS value									{$$ = func_plus($1, $3, yylineno);}
+		|  value MINUS value								{$$ = func_minus($1,$3,yylineno);}
+		|  value TIMES value								{$$=func_times($1,$3,yylineno);}
+		|  value DIV value									{$$=func_div($1,$3,yylineno);}
+		|  value MOD value  								{$$=func_mod($1,$3,yylineno);}
+;
+condition:
+		value EQ value										{$$=condition_equal($1,$3,yylineno);}
+		|  value NEQ value									{}
+		|  value LE value									{}
+		|  value GE value									{}
+		|  value LEQ value 									{}
+		|  value GEQ value 									{}
+;
+value:
+		num													{$$=func_num($1,yylineno);}
+		|  identifier 										{$$=func_id($1,yylineno);}
+identifier: 
+		pidentifier  										{$$ = func_pid(*$1, yylineno);}
+		|  pidentifier'['pidentifier']' 					{$$=func_pid_arr(*$1,*$3,yylineno);}
+		|  pidentifier'['num']'         					{$$=func_pid(*$1,$3,yylineno);}
+;
+%%
+
+int main( int argc, char *argv[] )
+{ 
+	extern FILE *yyin;
+	++argv; --argc;
+	yyin = fopen( argv[0], "r" );
+	//yydebug = 1;
+	errors = 0;
+	yyparse ();
+	printf ( "Parse Completed\n" );
+	return 0;
+}
+
+void yyerror(char *s)
+{
+	errors++;
+	printf ("%s\n", s);
+}

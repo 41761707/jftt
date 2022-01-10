@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_SIMPLE_TAB_H_INCLUDED
-# define YY_YY_SIMPLE_TAB_H_INCLUDED
+#ifndef YY_YY_SIMPLE_TAB_HPP_INCLUDED
+# define YY_YY_SIMPLE_TAB_HPP_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -43,6 +43,13 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 2 "Simple.ypp"
+
+    #include <string>
+    #include <vector>
+
+#line 53 "Simple.tab.hpp"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
@@ -92,20 +99,21 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-#line 49 "Simple.y"
+#line 20 "Simple.ypp"
 union sem_rec
 {
-#line 50 "Simple.y"
+#line 21 "Simple.ypp"
 
-	char *pidentifier;
-	int num;
-	char *id;
-	struct lbs *lbls;
+	std::string *pidentifier;
+    long long int num;
+    struct variable *variable;
+    struct condition *cond;
+    std::vector<std::string> *command;
 
-#line 106 "Simple.tab.h"
+#line 114 "Simple.tab.hpp"
 
 };
-#line 49 "Simple.y"
+#line 20 "Simple.ypp"
 typedef union sem_rec YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
@@ -116,4 +124,4 @@ extern YYSTYPE yylval;
 
 int yyparse (void);
 
-#endif /* !YY_YY_SIMPLE_TAB_H_INCLUDED  */
+#endif /* !YY_YY_SIMPLE_TAB_HPP_INCLUDED  */

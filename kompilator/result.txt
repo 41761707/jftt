@@ -1,0 +1,6 @@
+PUT
+ADD b
+STORE b
+GET
+HALT
+Parse Completed

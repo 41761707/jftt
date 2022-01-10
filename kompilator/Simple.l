@@ -1,8 +1,9 @@
-
+%option noyywrap
 %{
 #include <string.h>
 #include <stdlib.h> 
-#include "Simple.tab.h"
+#include <string>
+#include "Simple.tab.hpp"
 %}
 NUM            -?([0-9]+)
 PIDENTIFIER    [_a-z]+
@@ -50,7 +51,7 @@ PIDENTIFIER    [_a-z]+
 "ELSE"            {return(ELSE);}
 "ENDIF"           {return(ENDIF);}
 
-{PIDENTIFIER}     { yylval.id = (char *) strdup(yytext);return(pidentifier); }
+{PIDENTIFIER}     { yylval.pidentifier = new std::string(yytext);return(pidentifier); }
 {NUM}		        { yylval.num = atoi( yytext );return(num); }
 \(.*\)          ;
 .               return(yytext[0]);
@@ -58,4 +59,3 @@ PIDENTIFIER    [_a-z]+
 
 
 %%
-int yywrap(void){}
