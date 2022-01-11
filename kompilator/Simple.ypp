@@ -8,6 +8,7 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#include <string>
+	#include <fstream>
 	#include "ST.hpp" 
 	#include "SM.hpp" 
 	#include "CG.hpp" 
@@ -70,10 +71,12 @@ commands:
 ;
 command: 
 		identifier ASSIGN expression ';'					{assign($1,$3,yylineno);}
-		|  IF condition THEN commands ELSE commands ENDIF	{}
-		|  IF condition THEN commands ENDIF					{func_if($2,yylineno);}
-		|  WHILE condition DO commands ENDWHILE				{}
-		|  REPEAT commands UNTIL condition ';'				{}
+		|  IF condition THEN commands ENDIF                 {func_if();}
+		|  IF condition THEN commands ELSE   				{func_else();}
+		   commands ENDIF                                   {func_if();}
+		|  WHILE condition DO commands ENDWHILE				{func_while();}
+		|  REPEAT 											{func_repeat();}
+			commands UNTIL condition ';'					{func_until();}
 		|  FOR pidentifier FROM value TO value DO commands ENDFOR	{}
 		|  FOR pidentifier FROM value DOWNTO value DO commands ENDFOR {}
 		|  READ  identifier ';'								{read($2,yylineno);}
@@ -81,19 +84,19 @@ command:
 ;
 expression: 
 		value												{func_val($1,yylineno);}
-		|  value PLUS value									{$$ = func_plus($1, $3, yylineno);}
-		|  value MINUS value								{$$ = func_minus($1,$3,yylineno);}
-		|  value TIMES value								{$$=func_times($1,$3,yylineno);}
-		|  value DIV value									{$$=func_div($1,$3,yylineno);}
-		|  value MOD value  								{$$=func_mod($1,$3,yylineno);}
+		|  value PLUS value									{func_plus($1, $3, yylineno);}
+		|  value MINUS value								{func_minus($1,$3,yylineno);}
+		|  value TIMES value								{}
+		|  value DIV value									{}
+		|  value MOD value  								{}
 ;
 condition:
-		value EQ value										{$$=condition_equal($1,$3,yylineno);}
-		|  value NEQ value									{}
-		|  value LE value									{}
-		|  value GE value									{}
-		|  value LEQ value 									{}
-		|  value GEQ value 									{}
+		value EQ value		{condition_eq($1,$3,yylineno);}
+		|  value NEQ value	{condition_neq($1,$3,yylineno);}
+		|  value LE value	{condition_le($1,$3,yylineno);}
+		|  value GE value   {condition_ge($1,$3,yylineno);}
+		|  value LEQ value 	{condition_leq($1,$3,yylineno);}
+		|  value GEQ value 	{condition_geq($1,$3,yylineno);}
 ;
 value:
 		num													{$$=func_num($1,yylineno);}
@@ -109,11 +112,18 @@ int main( int argc, char *argv[] )
 { 
 	extern FILE *yyin;
 	++argv; --argc;
+	std::ofstream outfile;
 	yyin = fopen( argv[0], "r" );
+	outfile.open (argv[1]);
 	//yydebug = 1;
 	errors = 0;
 	yyparse ();
-	printf ( "Parse Completed\n" );
+	for(int i=0;i<command_list.size();i++)
+	{
+		outfile << command_list[i] << std::endl;
+	}
+	fclose(yyin);
+	outfile.close();
 	return 0;
 }
 

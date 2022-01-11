@@ -7,16 +7,19 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
+#include <algorithm>
 #include <vector>
 
 int current_command=0;
 std::vector<std::string> command_list;
-struct var_init
+/*struct var_init
 {
     std::string name;
     long long int lineno;
 };
-std::vector<var_init> not_init;
+std::vector<var_init> not_init;*/
+
+std::vector<long long> condition_start;
 
 struct memoryCells
 {
@@ -49,8 +52,7 @@ typedef struct variable var;
 
 struct condition
 {
-    var *sourceA;
-    var *sourceB;
+    std::string name;
     long long value;
 };
 typedef struct condition condition;
@@ -84,6 +86,7 @@ void init_registers()
 	registersTable[6].variableName="";
 	registersTable[7].registerName="h";
 	registersTable[7].variableName="";
+	condition_start.push_back((long long)-1);
 	for(int i=0;i<sym_tab.size();i++)
 	{
 		if(sym_tab[i].type==VARIABLE)
@@ -123,6 +126,10 @@ void test_print()
 	{
 		std::cout << i << ", " << memory[i].name <<", " << memory[i].value << std::endl;
 	}
+	for(int i=0;i<condition_start.size();i++)
+	{
+		std::cout << condition_start[i] << std::endl;
+	}
 }
 var *func_num(long long int value, int lineno)
 {
@@ -154,7 +161,20 @@ var *func_pid(std::string name, int lineno)
 
 var *func_pid_arr(std::string name, std::string index, int lieno)
 {
-
+	std::string arrayIndex="";
+	for(int i=0;i<memory.size();i++)
+	{
+		if(memory[i].name==index)
+		{
+			arrayIndex=memory[i].name;
+			var * current_var;
+			current_var=new var;
+			current_var->name=arrayIndex;
+			current_var->value=memory[i].value;
+			current_var->type=_VAR;
+			return current_var;
+		}
+	}	
 }
 
 var *func_pid(std::string name, long long index, int lineno)
@@ -185,10 +205,10 @@ var *func_val(var *val, int lineno)
 void halt()
 {
 	command_list.push_back("HALT");
-	for(int i=0;i<command_list.size();i++)
+	/*for(int i=0;i<command_list.size();i++)
 	{
 		std::cout << command_list[i] << std::endl;
-	}
+	}*/
 	test_print();
 }
 void reset(registers &reg)
@@ -268,8 +288,8 @@ void load(std::string name, registers &reg)
 	{
 		inc(reg);
 	}
-	reg.variableName=memory[i].name;
-	reg.value=memory[i].value;
+	registersTable[0].variableName=memory[i].name;
+	registersTable[0].value=memory[i].value;
 	command_list.push_back("LOAD " + reg.registerName);
 	current_command=current_command+1;
 }
@@ -385,12 +405,20 @@ void write(var *current, int lineno)
 }
 void assign(var *variable, var *expr, int lineno)
 {
-	if(expr->type==_VAR)
+	if(expr->type==_VAR && expr->name=="temp")
 	{
-		std::cout << "EXPR->NAME" << std::endl;
+
 		std::cout << expr->name << std::endl;
 		// 1 = 2
-		reset(registersTable[0]);
+		reset(registersTable[1]);
+		swap(registersTable[1]);
+		reset(registersTable[2]);
+		load(variable->name,registersTable[2]);
+		reset_value_only(registersTable[0]);
+		add(registersTable[1]);
+		reset(registersTable[2]);
+		store(variable->name,registersTable[2]);
+		/*reset(registersTable[0]);
 		reset(registersTable[1]);
 		reset(registersTable[2]);
 		load(expr->name,registersTable[0]);  // 2
@@ -400,8 +428,22 @@ void assign(var *variable, var *expr, int lineno)
 		reset_value_only(registersTable[0]);
 		add(registersTable[2]);
 		reset(registersTable[1]);
-		store(variable->name,registersTable[1]);
+		store(variable->name,registersTable[1]);*/
 
+	}
+	else if(expr->type==_VAR && expr->name!="temp")
+	{
+		std::cout << expr->name << std::endl;
+		reset(registersTable[0]);
+		reset(registersTable[1]);
+		reset(registersTable[2]);
+		load(expr->name,registersTable[2]);
+		swap(registersTable[2]);
+		load(variable->name,registersTable[1]);
+		reset_value_only(registersTable[0]);
+		add(registersTable[2]);
+		reset(registersTable[2]);
+		store(variable->name,registersTable[2]);
 	}
 	else if(expr->type==VAL)
 	{
@@ -437,40 +479,82 @@ void assign(var *variable, var *expr, int lineno)
 
 	}
 }
-var *func_plus( var *v1, var *v2, int lineno)
+void *func_plus( var *v1, var *v2, int lineno)
 {
 	//liczba- 0, zmienna- 1
 	if(v1->type==VAL && v2->type==VAL)
 	{
+		for(int i=0;i<v1->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		for(int i=0;i<v2->value;i++)
+		{
+			inc(registersTable[2]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		v1->name="temp";
 		v1->value=v1->value+v2->value;
-		return v1;
+		
 	}
 	else if(v1->type==VAL && v2->type==_VAR)
 	{
+		std::cout << v1->value << std::endl;
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v2->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v2->value=memory[i].value;
 			}
 		}
+		std::cout << v2->value << std::endl;
+		reset(registersTable[1]);
+		for(int i=0;i<v1->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		v1->type=_VAR;
+		v1->name="temp";
+		v1->value=v1->value+v2->value;
 	}
 	else if(v1->type==_VAR && v2->type==_VAR)
 	{
+		//NIE RUSZAĆ
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v1->name)
 			{
+				reset(registersTable[1]);
+				load(memory[i].name,registersTable[1]);
+				swap(registersTable[1]);
 				v1->value=memory[i].value;
+				break;
 			}
 		}
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v2->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v2->value=memory[i].value;
+				break;
 			}
 		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		v1->name="temp";
+		v1->value=v1->value+v2->value;
 	}
 	else
 	{
@@ -478,52 +562,101 @@ var *func_plus( var *v1, var *v2, int lineno)
 		{
 			if(memory[i].name==v1->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v1->value=memory[i].value;
 			}
 		}
+		reset(registersTable[1]);
+		for(int i=0;i<v2->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		v1->name="temp";
+		v1->value=v1->value+v2->value;
 	}
-	var *current_var;
-    current_var = new var;
-    current_var->name="PLUS RESULT";
-    current_var->value=v1->value+v2->value;
-    current_var->type = VAL;
-    return current_var;
 
 }
-var *func_minus( var *v1, var *v2, int lineno)
+void *func_minus( var *v1, var *v2, int lineno)
 {
 	//liczba- 0, zmienna- 1
 	if(v1->type==VAL && v2->type==VAL)
 	{
+		for(int i=0;i<v1->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		for(int i=0;i<v2->value;i++)
+		{
+			inc(registersTable[2]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		sub(registersTable[2]);
+		v1->name="temp";
 		v1->value=v1->value-v2->value;
-		return v1;
+		
 	}
 	else if(v1->type==VAL && v2->type==_VAR)
 	{
+		std::cout << v1->value << std::endl;
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v2->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v2->value=memory[i].value;
 			}
 		}
+		std::cout << v2->value << std::endl;
+		reset(registersTable[1]);
+		for(int i=0;i<v1->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		sub(registersTable[2]);
+		v1->type=_VAR;
+		v1->name="temp";
+		v1->value=v1->value-v2->value;
 	}
 	else if(v1->type==_VAR && v2->type==_VAR)
 	{
+		//NIE RUSZAĆ
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v1->name)
 			{
+				reset(registersTable[1]);
+				load(memory[i].name,registersTable[1]);
+				swap(registersTable[1]);
 				v1->value=memory[i].value;
+				break;
 			}
 		}
 		for(int i=0;i<memory.size();i++)
 		{
 			if(memory[i].name==v2->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v2->value=memory[i].value;
+				break;
 			}
 		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		sub(registersTable[2]);
+		v1->name="temp";
+		v1->value=v1->value-v2->value;
 	}
 	else
 	{
@@ -531,186 +664,181 @@ var *func_minus( var *v1, var *v2, int lineno)
 		{
 			if(memory[i].name==v1->name)
 			{
+				reset(registersTable[2]);
+				load(memory[i].name,registersTable[2]);
+				swap(registersTable[2]);
 				v1->value=memory[i].value;
 			}
 		}
+		reset(registersTable[1]);
+		for(int i=0;i<v2->value;i++)
+		{
+			inc(registersTable[1]);
+		}
+		reset(registersTable[0]);
+		add(registersTable[2]);
+		sub(registersTable[1]);
+		v1->name="temp";
+		v1->value=v1->value-v2->value;
 	}
-	var *current_var;
-    current_var = new var;
-    current_var->name="PLUS RESULT";
-    current_var->value=v1->value-v2->value;
-    current_var->type = VAL;
-    return current_var;
 
 }
-var *func_times( var *v1, var *v2, int lineno)
+void *condition_eq(var *a,var *b, int lineno)
 {
-	//liczba- 0, zmienna- 1
-	if(v1->type==VAL && v2->type==VAL)
-	{
-		v1->value=v1->value*v2->value;
-		return v1;
-	}
-	else if(v1->type==VAL && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else if(v1->type==_VAR && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-	}
-	var *current_var;
-    current_var = new var;
-    current_var->name="PLUS RESULT";
-    current_var->value=v1->value*v2->value;
-    current_var->type = VAL;
-    return current_var;
-
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);	
 }
-var *func_div( var *v1, var *v2, int lineno)
+void *condition_neq(var *a,var *b, int lineno)
 {
-	//liczba- 0, zmienna- 1
-	if(v1->type==VAL && v2->type==VAL)
-	{
-		v1->value=v1->value/v2->value;
-		return v1;
-	}
-	else if(v1->type==VAL && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else if(v1->type==_VAR && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-	}
-	var *current_var;
-    current_var = new var;
-    current_var->name="PLUS RESULT";
-    current_var->value=v1->value/v2->value;
-    current_var->type = VAL;
-    return current_var;
-
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);	
+	command_list.push_back("JZERO");
 }
-var *func_mod( var *v1, var *v2, int lineno)
+void *condition_le(var *a,var *b, int lineno)
 {
-	//liczba- 0, zmienna- 1
-	if(v1->type==VAL && v2->type==VAL)
-	{
-		v1->value=v1->value%v2->value;
-		return v1;
-	}
-	else if(v1->type==VAL && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else if(v1->type==_VAR && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				v2->value=memory[i].value;
-			}
-		}
-	}
-	else
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				v1->value=memory[i].value;
-			}
-		}
-	}
-	var *current_var;
-    current_var = new var;
-    current_var->name="PLUS RESULT";
-    current_var->value=v1->value%v2->value;
-    current_var->type = VAL;
-    return current_var;
-
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);	
 }
-var *condition_equal(var *a, var *b, int lineno)
+void *condition_ge(var *a,var *b, int lineno)
 {
-	condition *cond;
-	cond = new condition;
-	cond->sourceA=a;
-	cond->sourceB=b;
-	cond->value=a->value-b->value;
-	reset(registersTable[0]);	
-	return cond;
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);	
+}
+void *condition_leq(var *a,var *b, int lineno)
+{
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);	
+	command_list.push_back("JPOS");
+}
+void *condition_geq(var *a,var *b, int lineno)
+{
+	condition_start.push_back(command_list.size()-1);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	load(a->name,registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[2]);
+	load(b->name,registersTable[2]);
+	swap(registersTable[2]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);
+	command_list.push_back("JNEG");
+}
 
+void func_if()
+{
+	long long commandListSize=command_list.size()-1;
+	for(int i=commandListSize;i>-1;i--)
+	{
+		if(command_list[i]=="JZERO" || command_list[i]=="JPOS" || command_list[i]=="JNEG" || command_list[i]=="JUMP")
+		{
+			condition_start.pop_back();
+			long long j=commandListSize-i+1;
+			command_list[i]=command_list[i]+" " + std::to_string(j);
+			break;
+
+		}
+	}
+}
+void func_else()
+{
+	long long commandListSize=command_list.size()-1;
+	for(int i=commandListSize;i>-1;i--)
+	{
+		if(command_list[i]=="JZERO" || command_list[i]=="JPOS" || command_list[i]=="JNEG")
+		{
+			condition_start.pop_back();
+			command_list.push_back("JUMP");
+			long long j=commandListSize-i+2;
+			command_list[i]=command_list[i]+" " + std::to_string(j);
+			break;
+
+		}
+	}
+}
+void func_while()
+{
+	long long commandListSize=command_list.size()-1;
+	for(int i=commandListSize;i>-1;i--)
+	{
+		if(command_list[i]=="JZERO" || command_list[i]=="JPOS" || command_list[i]=="JNEG")
+		{
+			long long revert=(commandListSize-condition_start[1])*(-1);
+			condition_start.pop_back();
+			long long j=commandListSize-i+2;
+			command_list.push_back("JUMP "+ std::to_string(revert));
+
+			command_list[i]=command_list[i]+" " + std::to_string(j);
+			break;
+
+		}
+	}
+}
+void func_repeat()
+{
+	command_list.push_back("REPEAT");
+}
+void func_until()
+{
+	long long commandListSize=command_list.size()-1;
+	for(int i=commandListSize;i>-1;i--)
+	{
+		if(command_list[i]=="REPEAT")
+		{
+			command_list.erase(std::remove(command_list.begin(), command_list.end(), "REPEAT"), command_list.end());
+			long long revert=(commandListSize-i)*(-1);
+			condition_start.pop_back();
+			std::cout << commandListSize << std::endl;
+			command_list[commandListSize-1]=command_list[commandListSize-1]+ " "+ std::to_string(revert);
+			break;
+
+		}
+	}
 }
 /*----------------------------*/

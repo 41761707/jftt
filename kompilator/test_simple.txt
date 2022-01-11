@@ -1,14 +1,10 @@
 VAR
-	tab[0:10]
+	a,b
 BEGIN
-	tab[0] ASSIGN -2 PLUS 3;
-	tab[1] ASSIGN -2 MINUS 3;
-	tab[2] ASSIGN -2 TIMES 3;
-	tab[3] ASSIGN -4 DIV 2;
-	tab[4] ASSIGN -2 MOD 3;
-	WRITE tab[0];
-	WRITE tab[1];
-	WRITE tab[2];
-	WRITE tab[3];
-	WRITE tab[4];
-END 
+	a ASSIGN 5;
+	b ASSIGN 0;
+	REPEAT
+		WRITE 2;
+		a ASSIGN a MINUS 1;
+	UNTIL a GEQ b;
+END

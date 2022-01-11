@@ -99,10 +99,10 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-#line 20 "Simple.ypp"
+#line 21 "Simple.ypp"
 union sem_rec
 {
-#line 21 "Simple.ypp"
+#line 22 "Simple.ypp"
 
 	std::string *pidentifier;
     long long int num;
@@ -113,7 +113,7 @@ union sem_rec
 #line 114 "Simple.tab.hpp"
 
 };
-#line 20 "Simple.ypp"
+#line 21 "Simple.ypp"
 typedef union sem_rec YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
