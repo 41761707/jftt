@@ -1,10 +1,12 @@
 VAR
-	a,b
+	a,b,tab[0:10]
 BEGIN
-	a ASSIGN 5;
-	b ASSIGN 0;
-	REPEAT
-		WRITE 2;
-		a ASSIGN a MINUS 1;
-	UNTIL a GEQ b;
+	a ASSIGN 2;
+	b ASSIGN 8;
+	WHILE a LE b DO
+		WRITE a;
+		WRITE tab[a];
+		a ASSIGN a PLUS 1;
+	ENDWHILE
+
 END

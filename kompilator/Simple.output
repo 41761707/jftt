@@ -1,0 +1,1189 @@
+Terminals unused in grammar
+
+    ENDDO
+    ERROR
+    ADD
+    SUB
+    MUL
+
+
+State 37 conflicts: 8 reduce/reduce
+
+
+Grammar
+
+    0 $accept: program $end
+
+    1 $@1: %empty
+
+    2 program: VAR declarations BEGINNER $@1 commands END
+
+    3 $@2: %empty
+
+    4 program: BEGINNER $@2 commands END
+
+    5 declarations: declarations ',' pidentifier
+    6             | declarations ',' pidentifier '[' num ':' num ']'
+    7             | pidentifier
+    8             | pidentifier '[' num ':' num ']'
+
+    9 commands: commands command
+   10         | command
+
+   11 command: identifier ASSIGN expression ';'
+   12        | IF condition THEN commands ENDIF
+
+   13 $@3: %empty
+
+   14 command: IF condition THEN commands ELSE $@3 commands ENDIF
+   15        | WHILE condition DO commands ENDWHILE
+
+   16 $@4: %empty
+
+   17 command: REPEAT $@4 commands UNTIL condition ';'
+   18        | FOR pidentifier FROM value TO value DO
+   19        | FOR pidentifier FROM value DOWNTO value DO
+   20        | commands ENDFOR
+   21        | READ identifier ';'
+   22        | WRITE value ';'
+
+   23 expression: value
+   24           | value PLUS value
+   25           | value MINUS value
+   26           | value TIMES value
+   27           | value DIV value
+   28           | value MOD value
+
+   29 condition: value EQ value
+   30          | value NEQ value
+   31          | value LE value
+   32          | value GE value
+   33          | value LEQ value
+   34          | value GEQ value
+
+   35 value: num
+   36      | identifier
+
+   37 identifier: pidentifier
+   38           | pidentifier '[' pidentifier ']'
+   39           | pidentifier '[' num ']'
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    ',' (44) 5 6
+    ':' (58) 6 8
+    ';' (59) 11 17 21 22
+    '[' (91) 6 8 38 39
+    ']' (93) 6 8 38 39
+    error (256)
+    num <num> (258) 6 8 35 39
+    pidentifier <pidentifier> (259) 5 6 7 8 18 19 37 38 39
+    FOR (260) 18 19
+    IF (261) 12 14
+    WHILE (262) 15
+    REPEAT (263) 17
+    DO (264) 15 18 19
+    VAR (265) 2
+    BEGINNER (266) 2 4
+    END (267) 2 4
+    THEN (268) 12 14
+    ELSE (269) 14
+    ENDIF (270) 12 14
+    FROM (271) 18 19
+    TO (272) 18
+    DOWNTO (273) 19
+    ENDFOR (274) 20
+    ENDWHILE (275) 15
+    ENDDO (276)
+    UNTIL (277) 17
+    READ (278) 21
+    WRITE (279) 22
+    LE (280) 31
+    GE (281) 32
+    LEQ (282) 33
+    GEQ (283) 34
+    EQ (284) 29
+    NEQ (285) 30
+    PLUS (286) 24
+    MINUS (287) 25
+    TIMES (288) 26
+    DIV (289) 27
+    MOD (290) 28
+    ASSIGN (291) 11
+    ERROR (292)
+    ADD (293)
+    SUB (294)
+    MUL (295)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (46)
+        on left: 0
+    program (47)
+        on left: 2 4
+        on right: 0
+    $@1 (48)
+        on left: 1
+        on right: 2
+    $@2 (49)
+        on left: 3
+        on right: 4
+    declarations (50)
+        on left: 5 6 7 8
+        on right: 2 5 6
+    commands <command> (51)
+        on left: 9 10
+        on right: 2 4 9 12 14 15 17 20
+    command <command> (52)
+        on left: 11 12 14 15 17 18 19 20 21 22
+        on right: 9 10
+    $@3 (53)
+        on left: 13
+        on right: 14
+    $@4 (54)
+        on left: 16
+        on right: 17
+    expression <variable> (55)
+        on left: 23 24 25 26 27 28
+        on right: 11
+    condition <cond> (56)
+        on left: 29 30 31 32 33 34
+        on right: 12 14 15 17
+    value <variable> (57)
+        on left: 35 36
+        on right: 18 19 22 23 24 25 26 27 28 29 30 31 32 33 34
+    identifier <variable> (58)
+        on left: 37 38 39
+        on right: 11 21 36
+
+
+State 0
+
+    0 $accept: . program $end
+
+    VAR       shift, and go to state 1
+    BEGINNER  shift, and go to state 2
+
+    program  go to state 3
+
+
+State 1
+
+    2 program: VAR . declarations BEGINNER $@1 commands END
+
+    pidentifier  shift, and go to state 4
+
+    declarations  go to state 5
+
+
+State 2
+
+    4 program: BEGINNER . $@2 commands END
+
+    $default  reduce using rule 3 ($@2)
+
+    $@2  go to state 6
+
+
+State 3
+
+    0 $accept: program . $end
+
+    $end  shift, and go to state 7
+
+
+State 4
+
+    7 declarations: pidentifier .
+    8             | pidentifier . '[' num ':' num ']'
+
+    '['  shift, and go to state 8
+
+    $default  reduce using rule 7 (declarations)
+
+
+State 5
+
+    2 program: VAR declarations . BEGINNER $@1 commands END
+    5 declarations: declarations . ',' pidentifier
+    6             | declarations . ',' pidentifier '[' num ':' num ']'
+
+    BEGINNER  shift, and go to state 9
+    ','       shift, and go to state 10
+
+
+State 6
+
+    4 program: BEGINNER $@2 . commands END
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 18
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 7
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 8
+
+    8 declarations: pidentifier '[' . num ':' num ']'
+
+    num  shift, and go to state 21
+
+
+State 9
+
+    2 program: VAR declarations BEGINNER . $@1 commands END
+
+    $default  reduce using rule 1 ($@1)
+
+    $@1  go to state 22
+
+
+State 10
+
+    5 declarations: declarations ',' . pidentifier
+    6             | declarations ',' . pidentifier '[' num ':' num ']'
+
+    pidentifier  shift, and go to state 23
+
+
+State 11
+
+   37 identifier: pidentifier .
+   38           | pidentifier . '[' pidentifier ']'
+   39           | pidentifier . '[' num ']'
+
+    '['  shift, and go to state 24
+
+    $default  reduce using rule 37 (identifier)
+
+
+State 12
+
+   18 command: FOR . pidentifier FROM value TO value DO
+   19        | FOR . pidentifier FROM value DOWNTO value DO
+
+    pidentifier  shift, and go to state 25
+
+
+State 13
+
+   12 command: IF . condition THEN commands ENDIF
+   14        | IF . condition THEN commands ELSE $@3 commands ENDIF
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    condition   go to state 27
+    value       go to state 28
+    identifier  go to state 29
+
+
+State 14
+
+   15 command: WHILE . condition DO commands ENDWHILE
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    condition   go to state 30
+    value       go to state 28
+    identifier  go to state 29
+
+
+State 15
+
+   17 command: REPEAT . $@4 commands UNTIL condition ';'
+
+    $default  reduce using rule 16 ($@4)
+
+    $@4  go to state 31
+
+
+State 16
+
+   21 command: READ . identifier ';'
+
+    pidentifier  shift, and go to state 11
+
+    identifier  go to state 32
+
+
+State 17
+
+   22 command: WRITE . value ';'
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 33
+    identifier  go to state 29
+
+
+State 18
+
+    4 program: BEGINNER $@2 commands . END
+    9 commands: commands . command
+   20 command: commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    END          shift, and go to state 34
+    ENDFOR       shift, and go to state 35
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 19
+
+   10 commands: command .
+
+    $default  reduce using rule 10 (commands)
+
+
+State 20
+
+   11 command: identifier . ASSIGN expression ';'
+
+    ASSIGN  shift, and go to state 38
+
+
+State 21
+
+    8 declarations: pidentifier '[' num . ':' num ']'
+
+    ':'  shift, and go to state 39
+
+
+State 22
+
+    2 program: VAR declarations BEGINNER $@1 . commands END
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 40
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 23
+
+    5 declarations: declarations ',' pidentifier .
+    6             | declarations ',' pidentifier . '[' num ':' num ']'
+
+    '['  shift, and go to state 41
+
+    $default  reduce using rule 5 (declarations)
+
+
+State 24
+
+   38 identifier: pidentifier '[' . pidentifier ']'
+   39           | pidentifier '[' . num ']'
+
+    num          shift, and go to state 42
+    pidentifier  shift, and go to state 43
+
+
+State 25
+
+   18 command: FOR pidentifier . FROM value TO value DO
+   19        | FOR pidentifier . FROM value DOWNTO value DO
+
+    FROM  shift, and go to state 44
+
+
+State 26
+
+   35 value: num .
+
+    $default  reduce using rule 35 (value)
+
+
+State 27
+
+   12 command: IF condition . THEN commands ENDIF
+   14        | IF condition . THEN commands ELSE $@3 commands ENDIF
+
+    THEN  shift, and go to state 45
+
+
+State 28
+
+   29 condition: value . EQ value
+   30          | value . NEQ value
+   31          | value . LE value
+   32          | value . GE value
+   33          | value . LEQ value
+   34          | value . GEQ value
+
+    LE   shift, and go to state 46
+    GE   shift, and go to state 47
+    LEQ  shift, and go to state 48
+    GEQ  shift, and go to state 49
+    EQ   shift, and go to state 50
+    NEQ  shift, and go to state 51
+
+
+State 29
+
+   36 value: identifier .
+
+    $default  reduce using rule 36 (value)
+
+
+State 30
+
+   15 command: WHILE condition . DO commands ENDWHILE
+
+    DO  shift, and go to state 52
+
+
+State 31
+
+   17 command: REPEAT $@4 . commands UNTIL condition ';'
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 53
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 32
+
+   21 command: READ identifier . ';'
+
+    ';'  shift, and go to state 54
+
+
+State 33
+
+   22 command: WRITE value . ';'
+
+    ';'  shift, and go to state 55
+
+
+State 34
+
+    4 program: BEGINNER $@2 commands END .
+
+    $default  reduce using rule 4 (program)
+
+
+State 35
+
+   20 command: commands ENDFOR .
+
+    $default  reduce using rule 20 (command)
+
+
+State 36
+
+    9 commands: commands . command
+   20 command: commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    ENDFOR       shift, and go to state 35
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 37
+
+    9 commands: commands command .
+   10         | command .
+
+    pidentifier  reduce using rule 9 (commands)
+    pidentifier  [reduce using rule 10 (commands)]
+    FOR          reduce using rule 9 (commands)
+    FOR          [reduce using rule 10 (commands)]
+    IF           reduce using rule 9 (commands)
+    IF           [reduce using rule 10 (commands)]
+    WHILE        reduce using rule 9 (commands)
+    WHILE        [reduce using rule 10 (commands)]
+    REPEAT       reduce using rule 9 (commands)
+    REPEAT       [reduce using rule 10 (commands)]
+    ENDFOR       reduce using rule 9 (commands)
+    ENDFOR       [reduce using rule 10 (commands)]
+    READ         reduce using rule 9 (commands)
+    READ         [reduce using rule 10 (commands)]
+    WRITE        reduce using rule 9 (commands)
+    WRITE        [reduce using rule 10 (commands)]
+    $default     reduce using rule 9 (commands)
+
+
+State 38
+
+   11 command: identifier ASSIGN . expression ';'
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    expression  go to state 56
+    value       go to state 57
+    identifier  go to state 29
+
+
+State 39
+
+    8 declarations: pidentifier '[' num ':' . num ']'
+
+    num  shift, and go to state 58
+
+
+State 40
+
+    2 program: VAR declarations BEGINNER $@1 commands . END
+    9 commands: commands . command
+   20 command: commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    END          shift, and go to state 59
+    ENDFOR       shift, and go to state 35
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 41
+
+    6 declarations: declarations ',' pidentifier '[' . num ':' num ']'
+
+    num  shift, and go to state 60
+
+
+State 42
+
+   39 identifier: pidentifier '[' num . ']'
+
+    ']'  shift, and go to state 61
+
+
+State 43
+
+   38 identifier: pidentifier '[' pidentifier . ']'
+
+    ']'  shift, and go to state 62
+
+
+State 44
+
+   18 command: FOR pidentifier FROM . value TO value DO
+   19        | FOR pidentifier FROM . value DOWNTO value DO
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 63
+    identifier  go to state 29
+
+
+State 45
+
+   12 command: IF condition THEN . commands ENDIF
+   14        | IF condition THEN . commands ELSE $@3 commands ENDIF
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 64
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 46
+
+   31 condition: value LE . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 65
+    identifier  go to state 29
+
+
+State 47
+
+   32 condition: value GE . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 66
+    identifier  go to state 29
+
+
+State 48
+
+   33 condition: value LEQ . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 67
+    identifier  go to state 29
+
+
+State 49
+
+   34 condition: value GEQ . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 68
+    identifier  go to state 29
+
+
+State 50
+
+   29 condition: value EQ . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 69
+    identifier  go to state 29
+
+
+State 51
+
+   30 condition: value NEQ . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 70
+    identifier  go to state 29
+
+
+State 52
+
+   15 command: WHILE condition DO . commands ENDWHILE
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 71
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 53
+
+    9 commands: commands . command
+   17 command: REPEAT $@4 commands . UNTIL condition ';'
+   20        | commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    ENDFOR       shift, and go to state 35
+    UNTIL        shift, and go to state 72
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 54
+
+   21 command: READ identifier ';' .
+
+    $default  reduce using rule 21 (command)
+
+
+State 55
+
+   22 command: WRITE value ';' .
+
+    $default  reduce using rule 22 (command)
+
+
+State 56
+
+   11 command: identifier ASSIGN expression . ';'
+
+    ';'  shift, and go to state 73
+
+
+State 57
+
+   23 expression: value .
+   24           | value . PLUS value
+   25           | value . MINUS value
+   26           | value . TIMES value
+   27           | value . DIV value
+   28           | value . MOD value
+
+    PLUS   shift, and go to state 74
+    MINUS  shift, and go to state 75
+    TIMES  shift, and go to state 76
+    DIV    shift, and go to state 77
+    MOD    shift, and go to state 78
+
+    $default  reduce using rule 23 (expression)
+
+
+State 58
+
+    8 declarations: pidentifier '[' num ':' num . ']'
+
+    ']'  shift, and go to state 79
+
+
+State 59
+
+    2 program: VAR declarations BEGINNER $@1 commands END .
+
+    $default  reduce using rule 2 (program)
+
+
+State 60
+
+    6 declarations: declarations ',' pidentifier '[' num . ':' num ']'
+
+    ':'  shift, and go to state 80
+
+
+State 61
+
+   39 identifier: pidentifier '[' num ']' .
+
+    $default  reduce using rule 39 (identifier)
+
+
+State 62
+
+   38 identifier: pidentifier '[' pidentifier ']' .
+
+    $default  reduce using rule 38 (identifier)
+
+
+State 63
+
+   18 command: FOR pidentifier FROM value . TO value DO
+   19        | FOR pidentifier FROM value . DOWNTO value DO
+
+    TO      shift, and go to state 81
+    DOWNTO  shift, and go to state 82
+
+
+State 64
+
+    9 commands: commands . command
+   12 command: IF condition THEN commands . ENDIF
+   14        | IF condition THEN commands . ELSE $@3 commands ENDIF
+   20        | commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    ELSE         shift, and go to state 83
+    ENDIF        shift, and go to state 84
+    ENDFOR       shift, and go to state 35
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 65
+
+   31 condition: value LE value .
+
+    $default  reduce using rule 31 (condition)
+
+
+State 66
+
+   32 condition: value GE value .
+
+    $default  reduce using rule 32 (condition)
+
+
+State 67
+
+   33 condition: value LEQ value .
+
+    $default  reduce using rule 33 (condition)
+
+
+State 68
+
+   34 condition: value GEQ value .
+
+    $default  reduce using rule 34 (condition)
+
+
+State 69
+
+   29 condition: value EQ value .
+
+    $default  reduce using rule 29 (condition)
+
+
+State 70
+
+   30 condition: value NEQ value .
+
+    $default  reduce using rule 30 (condition)
+
+
+State 71
+
+    9 commands: commands . command
+   15 command: WHILE condition DO commands . ENDWHILE
+   20        | commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    ENDFOR       shift, and go to state 35
+    ENDWHILE     shift, and go to state 85
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 72
+
+   17 command: REPEAT $@4 commands UNTIL . condition ';'
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    condition   go to state 86
+    value       go to state 28
+    identifier  go to state 29
+
+
+State 73
+
+   11 command: identifier ASSIGN expression ';' .
+
+    $default  reduce using rule 11 (command)
+
+
+State 74
+
+   24 expression: value PLUS . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 87
+    identifier  go to state 29
+
+
+State 75
+
+   25 expression: value MINUS . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 88
+    identifier  go to state 29
+
+
+State 76
+
+   26 expression: value TIMES . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 89
+    identifier  go to state 29
+
+
+State 77
+
+   27 expression: value DIV . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 90
+    identifier  go to state 29
+
+
+State 78
+
+   28 expression: value MOD . value
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 91
+    identifier  go to state 29
+
+
+State 79
+
+    8 declarations: pidentifier '[' num ':' num ']' .
+
+    $default  reduce using rule 8 (declarations)
+
+
+State 80
+
+    6 declarations: declarations ',' pidentifier '[' num ':' . num ']'
+
+    num  shift, and go to state 92
+
+
+State 81
+
+   18 command: FOR pidentifier FROM value TO . value DO
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 93
+    identifier  go to state 29
+
+
+State 82
+
+   19 command: FOR pidentifier FROM value DOWNTO . value DO
+
+    num          shift, and go to state 26
+    pidentifier  shift, and go to state 11
+
+    value       go to state 94
+    identifier  go to state 29
+
+
+State 83
+
+   14 command: IF condition THEN commands ELSE . $@3 commands ENDIF
+
+    $default  reduce using rule 13 ($@3)
+
+    $@3  go to state 95
+
+
+State 84
+
+   12 command: IF condition THEN commands ENDIF .
+
+    $default  reduce using rule 12 (command)
+
+
+State 85
+
+   15 command: WHILE condition DO commands ENDWHILE .
+
+    $default  reduce using rule 15 (command)
+
+
+State 86
+
+   17 command: REPEAT $@4 commands UNTIL condition . ';'
+
+    ';'  shift, and go to state 96
+
+
+State 87
+
+   24 expression: value PLUS value .
+
+    $default  reduce using rule 24 (expression)
+
+
+State 88
+
+   25 expression: value MINUS value .
+
+    $default  reduce using rule 25 (expression)
+
+
+State 89
+
+   26 expression: value TIMES value .
+
+    $default  reduce using rule 26 (expression)
+
+
+State 90
+
+   27 expression: value DIV value .
+
+    $default  reduce using rule 27 (expression)
+
+
+State 91
+
+   28 expression: value MOD value .
+
+    $default  reduce using rule 28 (expression)
+
+
+State 92
+
+    6 declarations: declarations ',' pidentifier '[' num ':' num . ']'
+
+    ']'  shift, and go to state 97
+
+
+State 93
+
+   18 command: FOR pidentifier FROM value TO value . DO
+
+    DO  shift, and go to state 98
+
+
+State 94
+
+   19 command: FOR pidentifier FROM value DOWNTO value . DO
+
+    DO  shift, and go to state 99
+
+
+State 95
+
+   14 command: IF condition THEN commands ELSE $@3 . commands ENDIF
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 100
+    command     go to state 19
+    identifier  go to state 20
+
+
+State 96
+
+   17 command: REPEAT $@4 commands UNTIL condition ';' .
+
+    $default  reduce using rule 17 (command)
+
+
+State 97
+
+    6 declarations: declarations ',' pidentifier '[' num ':' num ']' .
+
+    $default  reduce using rule 6 (declarations)
+
+
+State 98
+
+   18 command: FOR pidentifier FROM value TO value DO .
+
+    $default  reduce using rule 18 (command)
+
+
+State 99
+
+   19 command: FOR pidentifier FROM value DOWNTO value DO .
+
+    $default  reduce using rule 19 (command)
+
+
+State 100
+
+    9 commands: commands . command
+   14 command: IF condition THEN commands ELSE $@3 commands . ENDIF
+   20        | commands . ENDFOR
+
+    pidentifier  shift, and go to state 11
+    FOR          shift, and go to state 12
+    IF           shift, and go to state 13
+    WHILE        shift, and go to state 14
+    REPEAT       shift, and go to state 15
+    ENDIF        shift, and go to state 101
+    ENDFOR       shift, and go to state 35
+    READ         shift, and go to state 16
+    WRITE        shift, and go to state 17
+
+    commands    go to state 36
+    command     go to state 37
+    identifier  go to state 20
+
+
+State 101
+
+   14 command: IF condition THEN commands ELSE $@3 commands ENDIF .
+
+    $default  reduce using rule 14 (command)

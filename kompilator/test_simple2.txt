@@ -1,0 +1,10 @@
+	FOR i FROM b TO n DO
+		IF sito[i] NEQ 0 THEN
+			j ASSIGN i PLUS i;
+			WHILE j LEQ n DO
+				sito[j] ASSIGN 0;
+				j ASSIGN j PLUS i;
+			ENDWHILE
+			WRITE i;
+		ENDIF
+	ENDFOR

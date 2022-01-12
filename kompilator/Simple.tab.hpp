@@ -74,26 +74,22 @@ extern int yydebug;
     DOWNTO = 273,
     ENDFOR = 274,
     ENDWHILE = 275,
-    ENDDO = 276,
-    UNTIL = 277,
-    READ = 278,
-    WRITE = 279,
-    LE = 280,
-    GE = 281,
-    LEQ = 282,
-    GEQ = 283,
-    EQ = 284,
-    NEQ = 285,
-    PLUS = 286,
-    MINUS = 287,
-    TIMES = 288,
-    DIV = 289,
-    MOD = 290,
-    ASSIGN = 291,
-    ERROR = 292,
-    ADD = 293,
-    SUB = 294,
-    MUL = 295
+    UNTIL = 276,
+    READ = 277,
+    WRITE = 278,
+    LE = 279,
+    GE = 280,
+    LEQ = 281,
+    GEQ = 282,
+    EQ = 283,
+    NEQ = 284,
+    PLUS = 285,
+    MINUS = 286,
+    TIMES = 287,
+    DIV = 288,
+    MOD = 289,
+    ASSIGN = 290,
+    ERROR = 291
   };
 #endif
 
@@ -110,7 +106,7 @@ union sem_rec
     struct condition *cond;
     std::vector<std::string> *command;
 
-#line 114 "Simple.tab.hpp"
+#line 110 "Simple.tab.hpp"
 
 };
 #line 21 "Simple.ypp"

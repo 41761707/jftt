@@ -312,7 +312,6 @@ void jneg(long long j)
 
 var *func_num(long long int value, int lineno)
 {
-	//std::cout << value << std::endl;
     var *current_var;
     current_var = new var;
     current_var->value = value;
@@ -322,7 +321,6 @@ var *func_num(long long int value, int lineno)
 
 var *func_id(var *variable,int lineno)
 {
-	std::cout << variable->name << std::endl;
 	var *current_var;
     current_var = new var;
     current_var->name = variable->name;
@@ -332,7 +330,7 @@ var *func_id(var *variable,int lineno)
 
 var *func_pid(std::string name, int lineno)
 {
-	//std::cout << "func_pid"<< std::endl;
+	std::cout << "func_pid"<< std::endl;
 	var *current_var;
 	current_var = new var;
 	current_var->name = name;
@@ -344,7 +342,7 @@ var *func_pid(std::string name, int lineno)
 var *func_pid_arr(std::string name, std::string index, int lieno)
 {
 	//wczytaj index i pierwszy element tablicy, dodaj i zamontuj w pamięci
-	//std::cout << "func_pid_arr" << std::endl;
+	std::cout << "func_pid_arr" << std::endl;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
 	load(name+"0",registersTable[1]);
@@ -356,7 +354,7 @@ var *func_pid_arr(std::string name, std::string index, int lieno)
 	add(registersTable[1]);
 	add(registersTable[2]);
 	swap(registersTable[1]);
-	//test_print();
+	test_print();
 	var *current_var;
 	current_var=new var;
 	current_var->name=name+std::to_string(registersTable[2].value);
@@ -368,7 +366,7 @@ var *func_pid_arr(std::string name, std::string index, int lieno)
 
 var *func_pid(std::string name, long long index, int lineno)
 {
-	//std::cout << "func_pid" << std::endl;
+	std::cout << "func_pid" << std::endl;
 	std::string arrayIndex=name+std::to_string(index);
 	for(int i=0;i<memory.size();i++)
 	{
@@ -387,7 +385,7 @@ var *func_pid(std::string name, long long index, int lineno)
 
 var *func_val(var *val, int lineno)
 {
-	
+
 }
 
 /*GRAMMAR FUNCTIONS */
@@ -407,13 +405,15 @@ void write(var *current, int lineno)
 	reset(registersTable[0]);
 	if(current->type==_VAR)
 	{
-		reset(registersTable[1]);
-		load(current->name,registersTable[1]);
+		swap(registersTable[1]);
 		put();
+		//reset(registersTable[1]);
+		//load(current->name,registersTable[1]);
+		//put();
 	}
 	else if(current->type==PTR)
 	{
-		//std::cout << "SIEMA" << std::endl;
+		std::cout << "SIEMA" << std::endl;
 	}
 	else if(current->type==VAL)
 	{
@@ -461,6 +461,32 @@ void assign(var *variable, var *expr, int lineno)
 		add(registersTable[2]);
 		reset(registersTable[1]);
 		store(variable->name,registersTable[1]);*/
+
+	}
+	else if(variable->type==PTR && expr->type!=PTR)
+	{
+		std::string concat=variable->name+std::to_string(variable->value);
+		reset(registersTable[0]);
+		reset(registersTable[1]);
+		reset(registersTable[2]);
+		load(variable->name+"0",registersTable[1]);
+		reset(registersTable[0]);
+		load(variable->loopName,registersTable[2]);
+		swap(registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		reset(registersTable[2]);
+		load(expr->name,registersTable[2]);
+		swap(registersTable[2]);
+		reset(registersTable[3]);
+		load(concat,registersTable[3]);
+		reset_value_only(registersTable[0]);
+		add(registersTable[2]);
+		store_bez_inc(concat,registersTable[1]);
+
 
 	}
 	else if(expr->type==_VAR && expr->name!="temp")
