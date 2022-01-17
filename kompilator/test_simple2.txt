@@ -1,10 +1,17 @@
-	FOR i FROM b TO n DO
-		IF sito[i] NEQ 0 THEN
-			j ASSIGN i PLUS i;
-			WHILE j LEQ n DO
-				sito[j] ASSIGN 0;
-				j ASSIGN j PLUS i;
-			ENDWHILE
-			WRITE i;
-		ENDIF
-	ENDFOR
+VAR
+	n,p
+BEGIN
+	READ n;
+	IF n GEQ 0 THEN
+		REPEAT
+			p ASSIGN n DIV 2;
+			p ASSIGN 2 TIMES p;
+			IF n NEQ p THEN
+				WRITE 1;
+			ELSE
+				WRITE 0;
+			ENDIF 
+			n ASSIGN n DIV 2;
+		UNTIL n EQ 0;
+	ENDIF
+END

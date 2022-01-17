@@ -80,7 +80,7 @@
 	extern int yylineno;
 	void yyerror(char *s);
 	int yylex();
-	int errors;
+	int parserErrors;
 
 #line 86 "Simple.tab.cpp"
 
@@ -1479,7 +1479,7 @@ yyreduce:
 
   case 8:
 #line 65 "Simple.ypp"
-                                                                                                        {init_var(*(yyvsp[0].pidentifier),yylineno);}
+                                                                                                        {std::cout << (yyvsp[0].pidentifier)->c_str() << std::endl;init_var(*(yyvsp[0].pidentifier),yylineno);}
 #line 1484 "Simple.tab.cpp"
     break;
 
@@ -1567,110 +1567,98 @@ yyreduce:
 #line 1568 "Simple.tab.cpp"
     break;
 
-  case 25:
-#line 88 "Simple.ypp"
-                                                                                                                {func_val((yyvsp[0].variable),yylineno);}
-#line 1574 "Simple.tab.cpp"
-    break;
-
   case 26:
 #line 89 "Simple.ypp"
                                                                                                         {func_plus((yyvsp[-2].variable), (yyvsp[0].variable), yylineno);}
-#line 1580 "Simple.tab.cpp"
+#line 1574 "Simple.tab.cpp"
     break;
 
   case 27:
 #line 90 "Simple.ypp"
                                                                                                 {func_minus((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1586 "Simple.tab.cpp"
+#line 1580 "Simple.tab.cpp"
     break;
 
   case 28:
 #line 91 "Simple.ypp"
                                                                                                 {func_times((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1592 "Simple.tab.cpp"
+#line 1586 "Simple.tab.cpp"
     break;
 
   case 29:
 #line 92 "Simple.ypp"
                                                                                                         {func_div((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1598 "Simple.tab.cpp"
+#line 1592 "Simple.tab.cpp"
     break;
 
   case 30:
 #line 93 "Simple.ypp"
                                                                                                 {func_mod((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1604 "Simple.tab.cpp"
+#line 1598 "Simple.tab.cpp"
     break;
 
   case 31:
 #line 96 "Simple.ypp"
                                         {condition_eq((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1610 "Simple.tab.cpp"
+#line 1604 "Simple.tab.cpp"
     break;
 
   case 32:
 #line 97 "Simple.ypp"
                                         {condition_neq((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1616 "Simple.tab.cpp"
+#line 1610 "Simple.tab.cpp"
     break;
 
   case 33:
 #line 98 "Simple.ypp"
                                         {condition_le((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1622 "Simple.tab.cpp"
+#line 1616 "Simple.tab.cpp"
     break;
 
   case 34:
 #line 99 "Simple.ypp"
                                     {condition_ge((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1628 "Simple.tab.cpp"
+#line 1622 "Simple.tab.cpp"
     break;
 
   case 35:
 #line 100 "Simple.ypp"
                                         {condition_leq((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1634 "Simple.tab.cpp"
+#line 1628 "Simple.tab.cpp"
     break;
 
   case 36:
 #line 101 "Simple.ypp"
                                         {condition_geq((yyvsp[-2].variable),(yyvsp[0].variable),yylineno);}
-#line 1640 "Simple.tab.cpp"
+#line 1634 "Simple.tab.cpp"
     break;
 
   case 37:
 #line 104 "Simple.ypp"
                                                                                                                         {(yyval.variable)=func_num((yyvsp[0].num),yylineno);}
-#line 1646 "Simple.tab.cpp"
-    break;
-
-  case 38:
-#line 105 "Simple.ypp"
-                                                                                                        {(yyval.variable)=func_id((yyvsp[0].variable),yylineno);}
-#line 1652 "Simple.tab.cpp"
+#line 1640 "Simple.tab.cpp"
     break;
 
   case 39:
 #line 107 "Simple.ypp"
                                                                                                         {(yyval.variable) = func_pid(*(yyvsp[0].pidentifier), yylineno);}
-#line 1658 "Simple.tab.cpp"
+#line 1646 "Simple.tab.cpp"
     break;
 
   case 40:
 #line 108 "Simple.ypp"
                                                                                         {(yyval.variable) = func_pid_arr(*(yyvsp[-3].pidentifier),*(yyvsp[-1].pidentifier),yylineno);}
-#line 1664 "Simple.tab.cpp"
+#line 1652 "Simple.tab.cpp"
     break;
 
   case 41:
 #line 109 "Simple.ypp"
                                                                                         {(yyval.variable)=func_pid(*(yyvsp[-3].pidentifier),(yyvsp[-1].num),yylineno);}
-#line 1670 "Simple.tab.cpp"
+#line 1658 "Simple.tab.cpp"
     break;
 
 
-#line 1674 "Simple.tab.cpp"
+#line 1662 "Simple.tab.cpp"
 
       default: break;
     }
@@ -1913,13 +1901,17 @@ int main( int argc, char *argv[] )
 	yyin = fopen( argv[0], "r" );
 	outfile.open (argv[1]);
 	//yydebug = 1;
-	errors = 0;
+	parserErrors = 0;
 	yyparse ();
-	for(int i=0;i<command_list.size();i++)
+	int sumErrors=parserErrors+tableErrors+codeErrors;
+	if(sumErrors==0)
 	{
-		outfile << command_list[i] << std::endl;
+		for(int i=0;i<command_list.size();i++)
+		{
+			outfile << command_list[i] << std::endl;
+		}
+		std::cout << "Kompilacja przeprowadzona pomyslnie";
 	}
-	std::cout << "UKONCZONO" << std::endl;
 	fclose(yyin);
 	outfile.close();
 	return 0;
@@ -1927,6 +1919,6 @@ int main( int argc, char *argv[] )
 
 void yyerror(char *s)
 {
-	errors++;
+	parserErrors++;
 	printf ("%s\n", s);
 }

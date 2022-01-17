@@ -1,12 +1,12 @@
+( sort.imp )
 VAR
-	a,b,tab[0:10]
+	tab[0:21],a, b
 BEGIN
-	a ASSIGN 2;
-	b ASSIGN 8;
-	WHILE a LE b DO
-		WRITE a;
-		WRITE tab[a];
-		a ASSIGN a PLUS 1;
-	ENDWHILE
-
+	a ASSIGN 0;
+	b ASSIGN 21;
+	w ASSIGN 1;
+	(generowanie nieposortowanej tablicy)
+	FOR i FROM b DOWNTO 2 DO
+		tab[i]  ASSIGN  11;
+	ENDFOR
 END

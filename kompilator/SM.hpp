@@ -11,6 +11,7 @@
 #include <vector>
 
 int current_command=0;
+int codeErrors=0;
 std::vector<std::string> command_list;
 /*struct var_init
 {
@@ -19,11 +20,6 @@ std::vector<std::string> command_list;
 };
 std::vector<var_init> not_init;*/
 
-struct memoryCells
-{
-	std::string name;
-	long long value;
-};
 
 struct registers
 {
@@ -36,13 +32,22 @@ enum var_type
 {
     VAL,
     _VAR,
-    PTR,
+    ARR,
+    ARRIND,
+    EXPR
+};
+
+struct memoryCells
+{
+	std::string name;
+	long long value;
+	var_type type;	
 };
 
 struct variable
 {
     std::string name;
-    std::string loopName;
+    std::string index;
     long long value;
     var_type type;
 };
@@ -113,6 +118,7 @@ void init_registers()
 			memoryCells cell;
 			cell.name=sym_tab[i].name;
 			cell.value=0;
+			cell.type=_VAR;
 			memory.push_back(cell);
 		}
 		else
@@ -124,6 +130,7 @@ void init_registers()
 				int index=sym_tab[i].firstIndex+j;
 				cell.name=sym_tab[i].name+std::to_string(index);
 				cell.value=0;
+				cell.type=ARR;
 				memory.push_back(cell);
 				j=j+1;
 			}
@@ -167,18 +174,15 @@ void reset(registers &reg)
 void reset_value_only(registers &reg)
 {
 	command_list.push_back("RESET " + reg.registerName);
-	reg.value=0;
 	current_command=current_command+1;
 }
 void inc(registers &reg)
 {
-	reg.value=reg.value+1;
 	command_list.push_back("INC " + reg.registerName);
 	current_command=current_command+1;
 }
 void dec(registers &reg)
 {
-	reg.value=reg.value-1;
 	command_list.push_back("DEC " + reg.registerName);
 	current_command=current_command+1;
 }
@@ -186,8 +190,6 @@ void get(std::string name)
 {
 	command_list.push_back("GET");
 	registersTable[0].variableName=name;
-	//std::cout << "INPUT: " << std::endl;
-	//std::cin >> registersTable[0].value;
 	current_command=current_command+1;
 }
 void add(registers &reg)
@@ -235,7 +237,11 @@ void load(std::string name, registers &reg)
 		inc(reg);
 	}
 	registersTable[0].variableName=memory[i].name;
-	registersTable[0].value=memory[i].value;
+	command_list.push_back("LOAD " + reg.registerName);
+	current_command=current_command+1;
+}
+void load_without_name(registers &reg)
+{
 	command_list.push_back("LOAD " + reg.registerName);
 	current_command=current_command+1;
 }
@@ -255,15 +261,12 @@ void store(std::string name,registers &reg)
 	{
 		inc(reg);
 	}
-	memory[i].value=registersTable[0].value;
 	command_list.push_back("STORE " + reg.registerName);
 	current_command=current_command+1;
 
 }
-void store_bez_inc(std::string name, registers &reg)
+void store_bez_inc(registers &reg)
 {
-	reg.variableName=name;
-	memory[reg.value].value=registersTable[0].value;
 	command_list.push_back("STORE " + reg.registerName);
 	current_command=current_command+1;
 }
@@ -312,82 +315,45 @@ void jneg(long long j)
 
 var *func_num(long long int value, int lineno)
 {
-	//std::cout << value << std::endl;
-    var *current_var;
-    current_var = new var;
-    current_var->value = value;
-    current_var->type = VAL;
-    return current_var;
-}
-
-var *func_id(var *variable,int lineno)
-{
-	std::cout << variable->name << std::endl;
 	var *current_var;
-    current_var = new var;
-    current_var->name = variable->name;
-    current_var->type = _VAR;
-    return current_var;
+	current_var=new var;
+	current_var->value=value;
+	current_var->type=VAL;
+	return current_var;
 }
 
 var *func_pid(std::string name, int lineno)
 {
-	//std::cout << "func_pid"<< std::endl;
 	var *current_var;
-	current_var = new var;
-	current_var->name = name;
-	current_var->value = (long long )1;
-	current_var->type = _VAR;
+	current_var=new var;
+	current_var->name=name;
+	current_var->value=(long long)0;
+	current_var->type=_VAR;
 	return current_var;
 }
 
 var *func_pid_arr(std::string name, std::string index, int lieno)
 {
-	//wczytaj index i pierwszy element tablicy, dodaj i zamontuj w pamięci
-	//std::cout << "func_pid_arr" << std::endl;
-	reset(registersTable[0]);
-	reset(registersTable[1]);
-	load(name+"0",registersTable[1]);
-	reset(registersTable[0]);
-	reset(registersTable[2]);
-	load(index,registersTable[2]);
-	swap(registersTable[2]);
-	reset(registersTable[0]);
-	add(registersTable[1]);
-	add(registersTable[2]);
-	swap(registersTable[1]);
-	//test_print();
 	var *current_var;
 	current_var=new var;
-	current_var->name=name+std::to_string(registersTable[2].value);
-	current_var->value=(long long)1;
-	current_var->type = PTR;
+	current_var->name=name;
+	current_var->type=ARRIND;
+	current_var->value=(long long )1;
+	current_var->index=index;
 	return current_var;
 
 }
 
 var *func_pid(std::string name, long long index, int lineno)
 {
-	//std::cout << "func_pid" << std::endl;
-	std::string arrayIndex=name+std::to_string(index);
-	for(int i=0;i<memory.size();i++)
-	{
-		if(memory[i].name==arrayIndex)
-		{
-			var *current_var;
-			current_var=new var;
-			current_var->name=arrayIndex;
-			current_var->value=(long long)1;
-			current_var->type = _VAR;
-			return current_var;
-		}
+	var *current_var;
+	current_var=new var;
+	current_var->name=name;
+	current_var->index=(long long)-1;
+	current_var->type=ARR;  //TU UWAGA
+	current_var->value=index;
+	return current_var;
 
-	}
-}
-
-var *func_val(var *val, int lineno)
-{
-	
 }
 
 /*GRAMMAR FUNCTIONS */
@@ -405,17 +371,7 @@ void read(var *name, int lineno)
 void write(var *current, int lineno)
 {
 	reset(registersTable[0]);
-	if(current->type==_VAR)
-	{
-		reset(registersTable[1]);
-		load(current->name,registersTable[1]);
-		put();
-	}
-	else if(current->type==PTR)
-	{
-		//std::cout << "SIEMA" << std::endl;
-	}
-	else if(current->type==VAL)
+	if(current->type==VAL)
 	{
 		if(current->value<0)
 		{
@@ -434,103 +390,169 @@ void write(var *current, int lineno)
 		}
 		put();
 	}
+	else if(current->type==_VAR)
+	{
+		reset(registersTable[1]);
+		load(current->name,registersTable[1]);
+		put();
+	}
+	else if(current->type==ARR)
+	{
+		std::string newString=current->name+std::to_string(current->value);
+		reset(registersTable[1]);
+		load(newString,registersTable[1]);
+		put();
+
+	}
+	else if(current->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[1]);
+		load(current->index,registersTable[1]);
+		swap(registersTable[1]);
+		reset(registersTable[2]);
+		load(current->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		put();
+	}
 }
 void assign(var *variable, var *expr, int lineno)
 {
-	if(expr->type==_VAR && expr->name=="temp")
+	if(variable->type==_VAR)
 	{
-
-		//std::cout << expr->name << std::endl;
-		// 1 = 2
-		reset(registersTable[1]);
-		swap(registersTable[1]);
 		reset(registersTable[2]);
 		load(variable->name,registersTable[2]);
-		reset_value_only(registersTable[0]);
-		add(registersTable[1]);
-		reset(registersTable[2]);
-		store(variable->name,registersTable[2]);
-		/*reset(registersTable[0]);
-		reset(registersTable[1]);
-		reset(registersTable[2]);
-		load(expr->name,registersTable[0]);  // 2
-		swap(registersTable[2]);
-		reset(registersTable[1]);
-		load(variable->name,registersTable[1]); // 1
-		reset_value_only(registersTable[0]);
-		add(registersTable[2]);
-		reset(registersTable[1]);
-		store(variable->name,registersTable[1]);*/
-
-	}
-	else if(expr->type==_VAR && expr->name!="temp")
-	{
-		//std::cout << expr->name << std::endl;
 		reset(registersTable[0]);
-		reset(registersTable[1]);
-		reset(registersTable[2]);
-		load(expr->name,registersTable[2]);
-		swap(registersTable[2]);
-		load(variable->name,registersTable[1]);
-		reset_value_only(registersTable[0]);
-		add(registersTable[2]);
-		reset(registersTable[2]);
-		store(variable->name,registersTable[2]);
-	}
-	else if(expr->type==VAL && expr->name=="temp")
-	{
-		reset(registersTable[1]);
-		swap(registersTable[1]);
-		reset(registersTable[2]);
-		load(variable->name,registersTable[2]);
-		reset_value_only(registersTable[0]);
-		add(registersTable[1]);
-		reset(registersTable[2]);
-		store(variable->name,registersTable[2]);
-	}
-	else if(expr->type==VAL && expr->name!="temp")
-	{
-		reset(registersTable[0]);
-		reset(registersTable[1]);
-		if(expr->value>0)
+		if(expr->type==EXPR)
 		{
-			for(int i=0;i<expr->value;i++)
+		}
+		else if(expr->type==VAL)
+		{
+			reset(registersTable[1]);
+			if(expr->value>0)
 			{
-				inc(registersTable[1]);
+				for(int i=0;i<expr->value;i++)
+				{
+					inc(registersTable[1]);
+				}
+			}
+			else
+			{
+				for(int i=expr->value;i<0;i++)
+				{
+					dec(registersTable[1]);
+				}
 			}
 		}
 		else
 		{
-			for(int i=expr->value;i<0;i++)
-			{
-				dec(registersTable[1]);
-			}
+			reset(registersTable[1]);
+			load(expr->name,registersTable[1]);
+			swap(registersTable[1]);
 		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==variable->name)
-			{
-				load(variable->name,registersTable[2]);
-				break;
-			}
-		}
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		store_bez_inc(registersTable[2]);
+	}
+	else if(variable->type==ARR)
+	{
+		std::string newString=variable->name+std::to_string(variable->value);
 		reset_value_only(registersTable[0]);
+		if(expr->type==EXPR)
+		{
+		}
+		else if(expr->type==VAL)
+		{
+			reset(registersTable[1]);
+			if(expr->value>0)
+			{
+				for(int i=0;i<expr->value;i++)
+				{
+					inc(registersTable[1]);
+				}
+			}
+			else
+			{
+				for(int i=expr->value;i<0;i++)
+				{
+					dec(registersTable[1]);
+				}
+			}
+		}
+		else
+		{
+			reset(registersTable[1]);
+			load(expr->name,registersTable[1]);
+			swap(registersTable[1]);
+		}
+		reset(registersTable[0]);
 		add(registersTable[1]);
 		reset(registersTable[2]);
-		store(variable->name,registersTable[2]);
+		store(newString,registersTable[2]);
 	}
-	else
+	else if(variable->type==ARRIND)
 	{
-
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(variable->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(variable->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+		reset(registersTable[0]);
+		if(expr->type==EXPR)
+		{
+		}
+		else if(expr->type==VAL)
+		{
+			reset(registersTable[1]);
+			if(expr->value>0)
+			{
+				for(int i=0;i<expr->value;i++)
+				{
+					inc(registersTable[1]);
+				}
+			}
+			else
+			{
+				for(int i=expr->value;i<0;i++)
+				{
+					dec(registersTable[1]);
+				}
+			}
+		}
+		else
+		{
+			reset(registersTable[1]);
+			load(expr->name,registersTable[1]);
+			swap(registersTable[1]);
+		}
+		add(registersTable[1]);
+		store_bez_inc(registersTable[3]);	
 	}
 }
 void *func_plus( var *v1, var *v2, int lineno)
 {
-	//liczba- 0, zmienna- 1
-	if(v1->type==VAL && v2->type==VAL)
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	reset(registersTable[2]);
+	if(v1->type==_VAR)
 	{
-		reset(registersTable[1]);
-		reset(registersTable[2]);
+		load(v1->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type==VAL)
+	{
 		if(v1->value>0)
 		{
 			for(int i=0;i<v1->value;i++)
@@ -545,280 +567,263 @@ void *func_plus( var *v1, var *v2, int lineno)
 				dec(registersTable[1]);
 			}
 		}
+	}
+	else if(v1->type==ARRIND)
+	{
+		load(v1->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(v1->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type=ARR)
+	{
+		std::string newString=v1->name+std::to_string(v1->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(v2->type==_VAR)
+	{
+		load(v2->name,registersTable[2]);
+	}
+	else if(v2->type==VAL)
+	{
 		if(v2->value>0)
 		{
 			for(int i=0;i<v2->value;i++)
 			{
-				inc(registersTable[2]);
+				inc(registersTable[0]);
 			}
 		}
 		else
 		{
 			for(int i=v2->value;i<0;i++)
 			{
-				dec(registersTable[2]);
+				dec(registersTable[0]);
 			}
 		}
+	}
+	else if(v2->type==ARRIND)
+	{
 		reset(registersTable[0]);
-		add(registersTable[1]);
+		reset(registersTable[3]);
+		load(v2->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(v2->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
 		add(registersTable[2]);
-		v1->name="temp";
-		v1->value=v1->value+v2->value;
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(v2->type=ARR)
+	{
+		std::string newString=v2->name+std::to_string(v2->value);
+		load(newString,registersTable[2]);
 		
 	}
-	else if(v1->type==VAL && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v2->value=memory[i].value;
-			}
-		}
-		reset(registersTable[1]);
-		if(v1->value>0)
-		{
-			for(int i=0;i<v1->value;i++)
-			{
-				inc(registersTable[1]);
-			}
-		}
-		else
-		{
-			for(int i=v1->value;i<0;i++)
-			{
-				dec(registersTable[1]);
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		add(registersTable[2]);
-		v1->type=_VAR;
-		v1->name="temp";
-		v1->value=v1->value+v2->value;
-	}
-	else if(v1->type==_VAR && v2->type==_VAR)
-	{
-		//NIE RUSZAĆ
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				reset(registersTable[1]);
-				load(memory[i].name,registersTable[1]);
-				swap(registersTable[1]);
-				v1->value=memory[i].value;
-				break;
-			}
-		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v2->value=memory[i].value;
-				break;
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		add(registersTable[2]);
-		v1->name="temp";
-		v1->value=v1->value+v2->value;
-	}
-	else
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v1->value=memory[i].value;
-			}
-		}
-		reset(registersTable[1]);
-		if(v2->value>0)
-		{
-			for(int i=0;i<v2->value;i++)
-			{
-				inc(registersTable[2]);
-			}
-		}
-		else
-		{
-			for(int i=v2->value;i<0;i++)
-			{
-				dec(registersTable[2]);
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		add(registersTable[2]);
-		v1->name="temp";
-		v1->value=v1->value+v2->value;
-	}
-
+	add(registersTable[1]);
+	swap(registersTable[1]);
+	v1->type=EXPR;
 }
 void *func_minus( var *v1, var *v2, int lineno)
-{
-	//liczba- 0, zmienna- 1
-	if(v1->type==VAL && v2->type==VAL)
-	{
-		reset(registersTable[1]);
-		reset(registersTable[2]);
-		if(v1->value>0)
-		{
-			for(int i=0;i<v1->value;i++)
-			{
-				inc(registersTable[1]);
-			}
-		}
-		else
-		{
-			for(int i=v1->value;i<0;i++)
-			{
-				dec(registersTable[1]);
-			}
-		}
-		if(v2->value>0)
-		{
-			for(int i=0;i<v2->value;i++)
-			{
-				inc(registersTable[2]);
-			}
-		}
-		else
-		{
-			for(int i=v2->value;i<0;i++)
-			{
-				dec(registersTable[2]);
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		sub(registersTable[2]);
-		v1->name="temp";
-		v1->value=v1->value-v2->value;
-		
-	}
-	else if(v1->type==VAL && v2->type==_VAR)
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v2->value=memory[i].value;
-			}
-		}
-		reset(registersTable[1]);
-		if(v1->value>0)
-		{
-			for(int i=0;i<v1->value;i++)
-			{
-				inc(registersTable[1]);
-			}
-		}
-		else
-		{
-			for(int i=v1->value;i<0;i++)
-			{
-				dec(registersTable[1]);
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		sub(registersTable[2]);
-		v1->type=_VAR;
-		v1->name="temp";
-		v1->value=v1->value-v2->value;
-	}
-	else if(v1->type==_VAR && v2->type==_VAR)
-	{
-		//NIE RUSZAĆ
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				reset(registersTable[1]);
-				load(memory[i].name,registersTable[1]);
-				swap(registersTable[1]);
-				v1->value=memory[i].value;
-				break;
-			}
-		}
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v2->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v2->value=memory[i].value;
-				break;
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[1]);
-		sub(registersTable[2]);
-		v1->name="temp";
-		v1->value=v1->value-v2->value;
-	}
-	else
-	{
-		for(int i=0;i<memory.size();i++)
-		{
-			if(memory[i].name==v1->name)
-			{
-				reset(registersTable[2]);
-				load(memory[i].name,registersTable[2]);
-				swap(registersTable[2]);
-				v1->value=memory[i].value;
-			}
-		}
-		reset(registersTable[1]);
-		if(v2->value>0)
-		{
-			for(int i=0;i<v2->value;i++)
-			{
-				inc(registersTable[1]);
-			}
-		}
-		else
-		{
-			for(int i=v2->value;i<0;i++)
-			{
-				dec(registersTable[1]);
-			}
-		}
-		reset(registersTable[0]);
-		add(registersTable[2]);
-		sub(registersTable[1]);
-		v1->name="temp";
-		v1->value=v1->value-v2->value;
-	}
-
-}
-void *func_times( var *v1, var *v2, int lineno)
 {
 	reset(registersTable[0]);
 	reset(registersTable[1]);
 	reset(registersTable[2]);
-	load(v1->name,registersTable[1]);
+	if(v1->type==_VAR)
+	{
+		load(v1->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type==VAL)
+	{
+		if(v1->value>0)
+		{
+			for(int i=0;i<v1->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=v1->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(v1->type==ARRIND)
+	{
+		load(v1->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(v1->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type=ARR)
+	{
+		std::string newString=v1->name+std::to_string(v1->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(v2->type==_VAR)
+	{
+		load(v2->name,registersTable[2]);
+	}
+	else if(v2->type==VAL)
+	{
+		if(v2->value>0)
+		{
+			for(int i=0;i<v2->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=v2->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(v2->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(v2->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(v2->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(v2->type=ARR)
+	{
+		std::string newString=v2->name+std::to_string(v2->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[1]);
+	sub(registersTable[1]);
+	swap(registersTable[1]);
+	v1->type=EXPR;
+
+}
+void *func_times( var *v1, var *v2, int lineno)
+{
+
 	reset(registersTable[0]);
-	load(v2->name,registersTable[2]);
+	reset(registersTable[1]);
+	reset(registersTable[2]);
+	if(v1->type==_VAR)
+	{
+		load(v1->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type==VAL)
+	{
+		if(v1->value>0)
+		{
+			for(int i=0;i<v1->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=v1->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(v1->type==ARRIND)
+	{
+		load(v1->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(v1->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type=ARR)
+	{
+		std::string newString=v1->name+std::to_string(v1->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(v2->type==_VAR)
+	{
+		load(v2->name,registersTable[2]);
+	}
+	else if(v2->type==VAL)
+	{
+		if(v2->value>0)
+		{
+			for(int i=0;i<v2->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=v2->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(v2->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(v2->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(v2->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(v2->type=ARR)
+	{
+		std::string newString=v2->name+std::to_string(v2->value);
+		load(newString,registersTable[2]);
+		
+	}
+	reset(registersTable[2]);
 	swap(registersTable[2]);
-	reset(registersTable[0]);
 	swap(registersTable[1]);
 	jpos(9);
 	swap(registersTable[1]);
@@ -836,7 +841,9 @@ void *func_times( var *v1, var *v2, int lineno)
 	swap(registersTable[1]);
 	jump(-5);
 	swap(registersTable[1]);
-	put();
+	reset(registersTable[1]);
+	swap(registersTable[1]);
+	v1->type=EXPR;
 
 }
 void *func_div(var *v1, var *v2, int lineno)
@@ -845,10 +852,92 @@ void *func_div(var *v1, var *v2, int lineno)
 	reset(registersTable[0]);
 	reset(registersTable[1]);
 	reset(registersTable[2]);
-	load(v2->name,registersTable[1]);
-	swap(registersTable[1]);
+	if(v1->type==_VAR)
+	{
+		load(v1->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type==VAL)
+	{
+		if(v1->value>0)
+		{
+			for(int i=0;i<v1->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=v1->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(v1->type==ARRIND)
+	{
+		load(v1->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(v1->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type=ARR)
+	{
+		std::string newString=v1->name+std::to_string(v1->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
 	reset(registersTable[0]);
-	load(v1->name,registersTable[2]);
+	if(v2->type==_VAR)
+	{
+		load(v2->name,registersTable[2]);
+	}
+	else if(v2->type==VAL)
+	{
+		if(v2->value>0)
+		{
+			for(int i=0;i<v2->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=v2->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(v2->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(v2->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(v2->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(v2->type=ARR)
+	{
+		std::string newString=v2->name+std::to_string(v2->value);
+		load(newString,registersTable[2]);
+		
+	}
+	swap(registersTable[1]);
 	reset(registersTable[2]);
 
 
@@ -884,26 +973,6 @@ void *func_div(var *v1, var *v2, int lineno)
 	swap(registersTable[1]);
 
 
-	/*jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	put();
-	swap(registersTable[1]);
-	put();
-	swap(registersTable[2]);
-	put();*/
 	sub(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (pos)  ";
 	jneg(3);
 	inc(registersTable[2]);
@@ -920,14 +989,10 @@ void *func_div(var *v1, var *v2, int lineno)
 
 
 	swap(registersTable[2]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (kwkwk)  ";
-	put();
-
-
-	/*add(registersTable[1]);
-	sub(registersTable[2]);
-	jneg(0);
+	reset(registersTable[1]);
 	swap(registersTable[1]);
-	inc(registersTable[3]);*/
+
+	v1->type=EXPR;
 
 
 }
@@ -936,13 +1001,92 @@ void *func_mod(var *v1, var *v2, int lineno)
 	reset(registersTable[0]);
 	reset(registersTable[1]);
 	reset(registersTable[2]);
-	reset(registersTable[5]);
-	load(v2->name,registersTable[1]);
-	swap(registersTable[5]);
-	add(registersTable[5]);
-	swap(registersTable[1]);
+	if(v1->type==_VAR)
+	{
+		load(v1->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type==VAL)
+	{
+		if(v1->value>0)
+		{
+			for(int i=0;i<v1->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=v1->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(v1->type==ARRIND)
+	{
+		load(v1->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(v1->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(v1->type=ARR)
+	{
+		std::string newString=v1->name+std::to_string(v1->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
 	reset(registersTable[0]);
-	load(v1->name,registersTable[2]);
+	if(v2->type==_VAR)
+	{
+		load(v2->name,registersTable[2]);
+	}
+	else if(v2->type==VAL)
+	{
+		if(v2->value>0)
+		{
+			for(int i=0;i<v2->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=v2->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(v2->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(v2->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(v2->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(v2->type=ARR)
+	{
+		std::string newString=v2->name+std::to_string(v2->value);
+		load(newString,registersTable[2]);
+		
+	}
+	swap(registersTable[1]);
 	reset(registersTable[2]);
 
 
@@ -977,27 +1121,6 @@ void *func_mod(var *v1, var *v2, int lineno)
 	jump(8);   command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump neg)  ";
 	swap(registersTable[1]);
 
-
-	/*jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	jump(1);
-	put();
-	swap(registersTable[1]);
-	put();
-	swap(registersTable[2]);
-	put();*/
 	sub(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (pos)  ";
 	jneg(3);
 	inc(registersTable[2]);
@@ -1026,6 +1149,10 @@ void *func_mod(var *v1, var *v2, int lineno)
 
 	swap(registersTable[5]);
 	reset(registersTable[4]);
+	reset(registersTable[1]);
+	swap(registersTable[1]);
+
+	v1->type=EXPR;
 }
 void *condition_eq(var *a,var *b, int lineno)
 {
@@ -1034,10 +1161,92 @@ void *condition_eq(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[2]);
 	reset(registersTable[0]);
 	add(registersTable[1]);
@@ -1053,10 +1262,92 @@ void *condition_neq(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[2]);
 	reset(registersTable[0]);
 	add(registersTable[1]);
@@ -1072,10 +1363,92 @@ void *condition_le(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[2]);
 	reset(registersTable[0]);
 	add(registersTable[1]);
@@ -1091,10 +1464,92 @@ void *condition_ge(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[2]);
 	reset(registersTable[0]);
 	add(registersTable[1]);
@@ -1110,10 +1565,92 @@ void *condition_leq(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
 	swap(registersTable[2]);
 	reset(registersTable[0]);
 	add(registersTable[1]);
@@ -1129,12 +1666,93 @@ void *condition_geq(var *a,var *b, int lineno)
 	cond.pre_cond_index=command_list.size()-1;
 	reset(registersTable[0]);
 	reset(registersTable[1]);
-	load(a->name,registersTable[1]);
-	swap(registersTable[1]);
 	reset(registersTable[2]);
-	load(b->name,registersTable[2]);
-	swap(registersTable[2]);
+	if(a->type==_VAR)
+	{
+		load(a->name,registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type==VAL)
+	{
+		if(a->value>0)
+		{
+			for(int i=0;i<a->value;i++)
+			{
+				inc(registersTable[1]);
+			}
+		}
+		else
+		{
+			for(int i=a->value;i<0;i++)
+			{
+				dec(registersTable[1]);
+			}
+		}
+	}
+	else if(a->type==ARRIND)
+	{
+		load(a->index,registersTable[1]);
+		swap(registersTable[1]);
+		load(a->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[1]);
+		add(registersTable[2]);
+		swap(registersTable[1]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[1]);
+		swap(registersTable[1]);
+	}
+	else if(a->type=ARR)
+	{
+		std::string newString=a->name+std::to_string(a->value);
+		load(newString,registersTable[1]);
+		swap(registersTable[1]);
+	}
 	reset(registersTable[0]);
+	if(b->type==_VAR)
+	{
+		load(b->name,registersTable[2]);
+	}
+	else if(b->type==VAL)
+	{
+		if(b->value>0)
+		{
+			for(int i=0;i<b->value;i++)
+			{
+				inc(registersTable[0]);
+			}
+		}
+		else
+		{
+			for(int i=b->value;i<0;i++)
+			{
+				dec(registersTable[0]);
+			}
+		}
+	}
+	else if(b->type==ARRIND)
+	{
+		reset(registersTable[0]);
+		reset(registersTable[3]);
+		load(b->index,registersTable[3]);
+		swap(registersTable[3]);
+		reset(registersTable[2]);
+		load(b->name+"0",registersTable[2]);
+		reset(registersTable[0]);
+		add(registersTable[3]);
+		add(registersTable[2]);
+		swap(registersTable[3]);
+		reset(registersTable[0]);
+		load_without_name(registersTable[3]);
+
+	}
+	else if(b->type=ARR)
+	{
+		std::string newString=b->name+std::to_string(b->value);
+		load(newString,registersTable[2]);
+		
+	}
+	swap(registersTable[2]);
 	add(registersTable[1]);
 	sub(registersTable[2]);
 	command_list.push_back("PLACEHOLDER");
@@ -1287,45 +1905,53 @@ void func_until()
 	long long j=(commandListSize-repeat_beginning.post_cond_index-1)*(-1);
 	if(repeat_ending.name=="EQ")
 	{
-		command_list[repeat_ending.post_cond_index]="JZERO " + std::to_string(j);
-	}
-	else if(repeat_ending.name=="NEQ")
-	{
 		command_list[repeat_ending.post_cond_index]="JNEG " + std::to_string(j);
 		command_list.insert(command_list.begin()+repeat_ending.post_cond_index,"JPOS " + std::to_string(j+1));
 	}
-	else if(repeat_ending.name=="LE")
+	else if(repeat_ending.name=="NEQ")
 	{
-		command_list[repeat_ending.post_cond_index]="JNEG " + std::to_string(j);
+		command_list[repeat_ending.post_cond_index]="JZERO " + std::to_string(j);
 	}
-	else if(repeat_ending.name=="GE")
+	else if(repeat_ending.name=="LE")
 	{
 		command_list[repeat_ending.post_cond_index]="JPOS " + std::to_string(j);
 	}
-	else if(repeat_ending.name=="LEQ")
+	else if(repeat_ending.name=="GE")
 	{
 		command_list[repeat_ending.post_cond_index]="JNEG " + std::to_string(j);
+	}
+	else if(repeat_ending.name=="LEQ")
+	{
+		command_list[repeat_ending.post_cond_index]="JPOS " + std::to_string(j);
 		command_list.insert(command_list.begin()+repeat_ending.post_cond_index,"JZERO " + std::to_string(j+1));
 	}
 	else if(repeat_ending.name=="GEQ")
 	{
-		command_list[repeat_ending.post_cond_index]="JPOS " + std::to_string(j);
+		command_list[repeat_ending.post_cond_index]="JNEG " + std::to_string(j);
 		command_list.insert(command_list.begin()+repeat_ending.post_cond_index,"JZERO " + std::to_string(j+1));
 	}
 }
 
+
+//ASSIGN for FOR temporary solution
 void for_to(std::string name, var *v1, var *v2, int lineno)
 {
 	memoryCells cell;
 	cell.name=name;
 	cell.value=v1->value;
+	cell.type=_VAR;
 	memory.push_back(cell);
 	variable iter;
 	iter.name=name;
 	iter.value=v1->value;
-	iter.type=VAL;
+	iter.type=_VAR;
 	iterators.push_back(iter);
-	assign(&iter,v1,lineno);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	reset(registersTable[2]);
+	load(iter.name,registersTable[2]);
+	load(v1->name,registersTable[1]);
+	store_bez_inc(registersTable[2]);
 	condition_leq(&iter,v2,lineno);
 	forLabel label;
 	label.name=name;
@@ -1339,13 +1965,19 @@ void for_downto(std::string name, var *v1, var *v2, int lineno)
 	memoryCells cell;
 	cell.name=name;
 	cell.value=v1->value;
+	cell.type=_VAR;
 	memory.push_back(cell);
 	variable iter;
 	iter.name=name;
 	iter.value=v1->value;
-	iter.type=VAL;
+	iter.type=_VAR;
 	iterators.push_back(iter);
-	assign(&iter,v1,lineno);
+	reset(registersTable[0]);
+	reset(registersTable[1]);
+	reset(registersTable[2]);
+	load(iter.name,registersTable[2]);
+	load(v1->name,registersTable[1]);
+	store_bez_inc(registersTable[2]);
 	condition_geq(&iter,v2,lineno);
 	forLabel label;
 	label.name=name;
@@ -1360,8 +1992,7 @@ void endfor_to()
 	reset(registersTable[1]);
 	load(iter.name,registersTable[1]);
 	inc(registersTable[0]);
-	reset(registersTable[2]);
-	store(iter.name,registersTable[2]);
+	store_bez_inc(registersTable[1]);
 	long long commandListSize=command_list.size()-1;
 	forLabel for_start=forLabel_start[forLabel_start.size()-1];
 	forLabel_start.pop_back();
@@ -1381,8 +2012,7 @@ void endfor_downto()
 	reset(registersTable[1]);
 	load(iter.name,registersTable[1]);
 	dec(registersTable[0]);
-	reset(registersTable[2]);
-	store(iter.name,registersTable[2]);
+	store_bez_inc(registersTable[1]);
 	long long commandListSize=command_list.size()-1;
 	forLabel for_start=forLabel_start[forLabel_start.size()-1];
 	forLabel_start.pop_back();

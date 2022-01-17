@@ -9,6 +9,7 @@ long long offset=1;
 
 enum symtype {VARIABLE,ARRAY};
 
+int tableErrors=0;
 
 struct symrec
 {
@@ -53,7 +54,6 @@ int  getsym (std::string sym_name)
 	{
 		if(sym_tab[i].name==sym_name)
 		{
-			std::cout << "SIEMA" << std::endl;
 			return i;
 		}
 	}
@@ -70,6 +70,7 @@ void init_var ( std::string sym_name, int lineno )
 	else 
 	{ 
 		std::cout << sym_name << " is already defined, error line:" << lineno << std::endl;
+		tableErrors=tableErrors+1;
 	}
 }
 void init_array(std::string sym_name, long long firstIndex,long long lastIndex, int lineno)
@@ -79,10 +80,12 @@ void init_array(std::string sym_name, long long firstIndex,long long lastIndex, 
 	if(s!=-1)
 	{
 		std::cout << sym_name << " is already defined, error line:" << lineno << std::endl;
+		tableErrors=tableErrors+1;
 	}
 	else if (firstIndex>lastIndex)
 	{
 		printf("Not valid array initialization,error line: %d\n",lineno);
+		tableErrors=tableErrors+1;
 	}
 	else
 	{

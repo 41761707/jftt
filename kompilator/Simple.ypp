@@ -16,7 +16,7 @@
 	extern int yylineno;
 	void yyerror(char *s);
 	int yylex();
-	int errors;
+	int parserErrors;
 %}
 %union sem_rec
 {
@@ -62,7 +62,7 @@ program:
 declarations:
 		declarations ',' pidentifier						{init_var(*$3,yylineno);}
 		|  declarations ',' pidentifier '[' num ':' num ']'	{init_array(*$3,$5,$7,yylineno);}
-		|  pidentifier										{init_var(*$1,yylineno);}
+		|  pidentifier										{std::cout << $1->c_str() << std::endl;init_var(*$1,yylineno);}
 		|  pidentifier '[' num ':' num ']'					{init_array(*$1,$3,$5,yylineno);}
 ;
 commands:
@@ -85,7 +85,7 @@ command:
 		|  WRITE value ';'									{write($2,yylineno);}
 ;
 expression: 
-		value												{func_val($1,yylineno);}
+		value												;
 		|  value PLUS value									{func_plus($1, $3, yylineno);}
 		|  value MINUS value								{func_minus($1,$3,yylineno);}
 		|  value TIMES value								{func_times($1,$3,yylineno);}
@@ -102,10 +102,10 @@ condition:
 ;
 value:
 		num													{$$=func_num($1,yylineno);}
-		|  identifier 										{$$=func_id($1,yylineno);}
+		|  identifier 										;
 identifier: 
 		pidentifier  										{$$ = func_pid(*$1, yylineno);}
-		|  pidentifier '['pidentifier ']' 					{$$ = func_pid_arr(*$1,*$3,yylineno);}
+		|  pidentifier '['pidentifier']' 					{$$ = func_pid_arr(*$1,*$3,yylineno);}
 		|  pidentifier'['num']'         					{$$=func_pid(*$1,$3,yylineno);}
 ;
 %%
@@ -118,13 +118,17 @@ int main( int argc, char *argv[] )
 	yyin = fopen( argv[0], "r" );
 	outfile.open (argv[1]);
 	//yydebug = 1;
-	errors = 0;
+	parserErrors = 0;
 	yyparse ();
-	for(int i=0;i<command_list.size();i++)
+	int sumErrors=parserErrors+tableErrors+codeErrors;
+	if(sumErrors==0)
 	{
-		outfile << command_list[i] << std::endl;
+		for(int i=0;i<command_list.size();i++)
+		{
+			outfile << command_list[i] << std::endl;
+		}
+		std::cout << "Kompilacja przeprowadzona pomyslnie";
 	}
-	std::cout << "UKONCZONO" << std::endl;
 	fclose(yyin);
 	outfile.close();
 	return 0;
@@ -132,6 +136,6 @@ int main( int argc, char *argv[] )
 
 void yyerror(char *s)
 {
-	errors++;
+	parserErrors++;
 	printf ("%s\n", s);
 }
