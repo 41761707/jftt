@@ -1479,7 +1479,7 @@ yyreduce:
 
   case 8:
 #line 65 "Simple.ypp"
-                                                                                                        {std::cout << (yyvsp[0].pidentifier)->c_str() << std::endl;init_var(*(yyvsp[0].pidentifier),yylineno);}
+                                                                                                        {init_var(*(yyvsp[0].pidentifier),yylineno);}
 #line 1484 "Simple.tab.cpp"
     break;
 

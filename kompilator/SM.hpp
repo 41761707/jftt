@@ -123,13 +123,18 @@ void init_registers()
 		}
 		else
 		{
+			memoryCells arrayName;
+			arrayName.name=sym_tab[i].name;
+			arrayName.value=0;
+			arrayName.type=ARR;
+			memory.push_back(arrayName);
 			int j=0;
 			while (j<sym_tab[i].length)
 			{
 				memoryCells cell;
 				int index=sym_tab[i].firstIndex+j;
 				cell.name=sym_tab[i].name+std::to_string(index);
-				cell.value=0;
+				cell.value=index;
 				cell.type=ARR;
 				memory.push_back(cell);
 				j=j+1;
@@ -152,6 +157,23 @@ void test_print()
 	{
 		std::cout << i << ", " << memory[i].name <<", " << memory[i].value << std::endl;
 	}
+}
+std::string decToBin(long long number)
+{
+	std::string result="";
+	while(number>0)
+	{
+		if(number%2==1)
+		{
+			result=result+"1";
+		}
+		else
+		{
+			result=result+"0";
+		}
+		number=number/2;
+	}
+	return result;
 }
 /* COMMANDS */
 /*----------------------------*/
@@ -376,18 +398,72 @@ void write(var *current, int lineno)
 		if(current->value<0)
 		{
 			int a=current->value;
-			for(int i=current->value;i<0;i++)
+			std::string number=decToBin(current->value*(-1));
+			//std::cout << number << std::endl;
+			int current_position=number.size()-1;
+			reset(registersTable[1]);
+			reset(registersTable[2]);
+			dec(registersTable[0]);
+			for(int i=0;i<number.size();i++)
 			{
-				dec(registersTable[0]);
+				inc(registersTable[1]);
+			}
+			dec(registersTable[1]);
+			shift(registersTable[1]);
+			swap(registersTable[2]);
+			for(int i=number.size()-2;i>=0;i--)
+			{
+				//std::cout << "SIEMA" << std::endl;
+				if(number[i]=='1')
+				{
+					dec(registersTable[0]);
+					for(int a=current_position-i;a>0;a--)
+					{
+						dec(registersTable[1]);
+					}
+					current_position=i;
+					shift(registersTable[1]);
+					add(registersTable[2]);
+					swap(registersTable[2]);
+					reset(registersTable[0]);
+				}
 			}
 		}
 		else
 		{
-			for(int i=0;i<current->value;i++)
+			int a=current->value;
+			std::string number=decToBin(current->value);
+			std::cout << number << std::endl;
+			int current_position=number.size()-1;
+			reset(registersTable[1]);
+			reset(registersTable[2]);
+			inc(registersTable[0]);
+			for(int i=0;i<number.size();i++)
 			{
-				inc(registersTable[0]);
+				inc(registersTable[1]);
+			}
+			dec(registersTable[1]);
+			shift(registersTable[1]);
+			swap(registersTable[2]);
+			for(int i=number.size()-2;i>=0;i--)
+			{
+				//std::cout << "SIEMA" << std::endl;
+				if(number[i]=='1')
+				{
+					inc(registersTable[0]);
+					for(int a=current_position-i;a>0;a--)
+					{
+						dec(registersTable[1]);
+					}
+					current_position=i;
+					shift(registersTable[1]);
+					add(registersTable[2]);
+					swap(registersTable[2]);
+					reset(registersTable[0]);
+				}
 			}
 		}
+		swap(registersTable[2]);
 		put();
 	}
 	else if(current->type==_VAR)
@@ -399,6 +475,7 @@ void write(var *current, int lineno)
 	else if(current->type==ARR)
 	{
 		std::string newString=current->name+std::to_string(current->value);
+		//std::cout << newString << std::endl;
 		reset(registersTable[1]);
 		load(newString,registersTable[1]);
 		put();
@@ -423,6 +500,8 @@ void write(var *current, int lineno)
 }
 void assign(var *variable, var *expr, int lineno)
 {
+	std::cout << variable->type << std::endl;
+	//TODO: x ASSIGN tab[a] EXPR tab[a]
 	if(variable->type==_VAR)
 	{
 		reset(registersTable[2]);
@@ -497,6 +576,13 @@ void assign(var *variable, var *expr, int lineno)
 	}
 	else if(variable->type==ARRIND)
 	{
+		for(int i=0;i<memory.size();i++)
+		{
+			if(memory[i].name==variable->name)
+			{
+				std::cout << memory[i+1].value << std::endl;
+			}
+		}
 		reset(registersTable[0]);
 		reset(registersTable[3]);
 		load(variable->index,registersTable[3]);
@@ -737,6 +823,8 @@ void *func_times( var *v1, var *v2, int lineno)
 	reset(registersTable[0]);
 	reset(registersTable[1]);
 	reset(registersTable[2]);
+	reset(registersTable[3]);
+	reset(registersTable[4]);
 	if(v1->type==_VAR)
 	{
 		load(v1->name,registersTable[1]);
@@ -822,7 +910,49 @@ void *func_times( var *v1, var *v2, int lineno)
 		load(newString,registersTable[2]);
 		
 	}
-	reset(registersTable[2]);
+	jzero(38);
+	swap(registersTable[2]);
+	reset(registersTable[3]);
+	reset(registersTable[0]);
+	inc(registersTable[0]);
+	shift(registersTable[3]);
+	sub(registersTable[2]);
+	jpos(4);
+	reset(registersTable[0]);
+	inc(registersTable[3]);
+	jump(-7);
+	dec(registersTable[3]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	shift(registersTable[3]);
+	swap(registersTable[4]);
+	add(registersTable[4]);
+	swap(registersTable[4]);
+	reset(registersTable[0]);
+	inc(registersTable[0]);
+	shift(registersTable[3]);
+	swap(registersTable[2]);
+	sub(registersTable[2]);
+	swap(registersTable[2]);
+
+	reset(registersTable[0]);
+	inc(registersTable[0]);
+	dec(registersTable[3]);
+	swap(registersTable[3]);
+	jneg(7);
+	swap(registersTable[3]);
+	shift(registersTable[3]);
+	sub(registersTable[2]);
+	jneg(-20);
+	jzero(-21);
+	jump(-10);
+	swap(registersTable[4]);
+	swap(registersTable[1]);
+	jump(3);
+
+	reset(registersTable[0]);
+	swap(registersTable[1]);
+	/*reset(registersTable[2]);
 	swap(registersTable[2]);
 	swap(registersTable[1]);
 	jpos(9);
@@ -842,7 +972,8 @@ void *func_times( var *v1, var *v2, int lineno)
 	jump(-5);
 	swap(registersTable[1]);
 	reset(registersTable[1]);
-	swap(registersTable[1]);
+	swap(registersTable[1]);*/
+
 	v1->type=EXPR;
 
 }
@@ -937,61 +1068,55 @@ void *func_div(var *v1, var *v2, int lineno)
 		load(newString,registersTable[2]);
 		
 	}
-	swap(registersTable[1]);
-	reset(registersTable[2]);
-
-
-	jzero(38);  
-	swap(registersTable[1]);
-	jzero(36);
-	swap(registersTable[1]);
-
-	jpos(13);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump else1)  ";
-	swap(registersTable[1]);
-	jpos(9);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump else12)  ";
+	jzero(45);
 	swap(registersTable[2]);
-	sub(registersTable[2]);
 	swap(registersTable[1]);
-	swap(registersTable[2]);
+	jzero(42);
+	swap(registersTable[1]);
+	reset(registersTable[4]);
+	reset(registersTable[3]);
 	reset(registersTable[0]);
-	sub(registersTable[2]);
-	reset(registersTable[2]);
-	jump(14);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump pos)  ";
-	swap(registersTable[1]);
-	jump(18);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump neg)  ";
-
-	swap(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (else1)  ";
-	jpos(9);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump pos)  ";
-	swap(registersTable[2]);
-	sub(registersTable[2]);
-	swap(registersTable[1]);
-	swap(registersTable[2]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
+	sub(registersTable[1]);
+	jpos(3);
+	inc(registersTable[3]);
+	jump(-6);
+	dec(registersTable[3]);
 	reset(registersTable[0]);
-	sub(registersTable[2]);
-	reset(registersTable[2]);
-	jump(8);   command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump neg)  ";
+	inc(registersTable[0]);
+	shift(registersTable[3]);
+	swap(registersTable[4]);
+	add(registersTable[4]);
+	swap(registersTable[4]);
+	reset(registersTable[0]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
 	swap(registersTable[1]);
-
-
-	sub(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (pos)  ";
+	sub(registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);
+	jneg(12);
+	reset(registersTable[0]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
+	sub(registersTable[1]);
+	jneg(-20);
+	jzero(-21);
+	dec(registersTable[3]);
+	swap(registersTable[3]);
 	jneg(3);
-	inc(registersTable[2]);
-	jump(-3);
-	swap(registersTable[2]);
-	jump(8);
+	swap(registersTable[3]);
+	jump(-10);
 
-	add(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (neg)  ";
-	jneg(2);
-	jump(3);
-	dec(registersTable[2]);
-	jump(-4);
-	dec(registersTable[2]);
-
-
-	swap(registersTable[2]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (kwkwk)  ";
-	reset(registersTable[1]);
+	swap(registersTable[4]);
 	swap(registersTable[1]);
+	jump(3);
 
+	reset(registersTable[0]);
+	swap(registersTable[1]);
 	v1->type=EXPR;
 
 
@@ -1086,71 +1211,48 @@ void *func_mod(var *v1, var *v2, int lineno)
 		load(newString,registersTable[2]);
 		
 	}
-	swap(registersTable[1]);
-	reset(registersTable[2]);
-
-
-	jzero(48);  
-	swap(registersTable[1]);
-	jzero(46);
-	swap(registersTable[1]);
-
-	jpos(13);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump else1)  ";
-	swap(registersTable[1]);
-	jpos(9);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump else12)  ";
+	jzero(41);
 	swap(registersTable[2]);
-	sub(registersTable[2]);
 	swap(registersTable[1]);
-	swap(registersTable[2]);
-	reset(registersTable[0]);
-	sub(registersTable[2]);
-	reset(registersTable[2]);
-	jump(14);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump pos)  ";
+	jzero(38);
 	swap(registersTable[1]);
-	jump(18);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump neg)  ";
-
-	swap(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (else1)  ";
-	jpos(9);  command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump pos)  ";
-	swap(registersTable[2]);
-	sub(registersTable[2]);
-	swap(registersTable[1]);
-	swap(registersTable[2]);
-	reset(registersTable[0]);
-	sub(registersTable[2]);
-	reset(registersTable[2]);
-	jump(8);   command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (jump neg)  ";
-	swap(registersTable[1]);
-
-	sub(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (pos)  ";
-	jneg(3);
-	inc(registersTable[2]);
-	jump(-3);
-	add(registersTable[1]);
-	jump(9);
-
-	add(registersTable[1]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (neg)  ";
-	jneg(2);
-	jump(3);
-	dec(registersTable[2]);
-	jump(-4);
-	dec(registersTable[2]);
-
-
-	swap(registersTable[2]); command_list[command_list.size()-1]=command_list[command_list.size()-1]+ "   (kwkwk)  ";
-	swap(registersTable[2]);
-	swap(registersTable[5]);
-	jpos(4);
-
-	reset(registersTable[0]);
-	sub(registersTable[5]);
-	jump(2);
-
-
-
-	swap(registersTable[5]);
 	reset(registersTable[4]);
-	reset(registersTable[1]);
+	reset(registersTable[3]);
+	reset(registersTable[0]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
+	sub(registersTable[1]);
+	jpos(3);
+	inc(registersTable[3]);
+	jump(-6);
+	dec(registersTable[3]);
+	reset(registersTable[0]);
+	inc(registersTable[0]);
+	shift(registersTable[3]);
+	swap(registersTable[4]);
+	add(registersTable[4]);
+	swap(registersTable[4]);
+	reset(registersTable[0]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
 	swap(registersTable[1]);
+	sub(registersTable[1]);
+	swap(registersTable[1]);
+	reset(registersTable[0]);
+	add(registersTable[1]);
+	sub(registersTable[2]);
+	jneg(12);
+	reset(registersTable[0]);
+	add(registersTable[2]);
+	shift(registersTable[3]);
+	sub(registersTable[1]);
+	jneg(-20);
+	jzero(-21);
+	dec(registersTable[3]);
+	swap(registersTable[3]);
+	jneg(3);
+	swap(registersTable[3]);
+	jump(-10);
 
 	v1->type=EXPR;
 }

@@ -62,7 +62,7 @@ program:
 declarations:
 		declarations ',' pidentifier						{init_var(*$3,yylineno);}
 		|  declarations ',' pidentifier '[' num ':' num ']'	{init_array(*$3,$5,$7,yylineno);}
-		|  pidentifier										{std::cout << $1->c_str() << std::endl;init_var(*$1,yylineno);}
+		|  pidentifier										{init_var(*$1,yylineno);}
 		|  pidentifier '[' num ':' num ']'					{init_array(*$1,$3,$5,yylineno);}
 ;
 commands:
