@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <vector>
 
-long long offset=1;
+long long offset=0;
 
 enum symtype {VARIABLE,ARRAY};
 
@@ -25,15 +25,6 @@ typedef struct symrec symrec;
 
 std::vector<symrec> sym_tab;
 
-/*struct lbs
-{
-	int for_goto;
-	int for_jmp_false;
-};
-struct lbs * newlblrec()
-{
-	return (struct lbs *) malloc(sizeof(struct lbs));
-}*/
 void  putsym (std::string sym_name, long long length, long long firstIndex, symtype type)
 {
 	symrec ptr;
@@ -79,12 +70,12 @@ void init_array(std::string sym_name, long long firstIndex,long long lastIndex, 
 	s=getsym(sym_name);
 	if(s!=-1)
 	{
-		std::cout << sym_name << " is already defined, error line:" << lineno << std::endl;
+		std::cout << sym_name << ": druga deklaracja, numer linii:" << lineno << std::endl;
 		tableErrors=tableErrors+1;
 	}
 	else if (firstIndex>lastIndex)
 	{
-		printf("Not valid array initialization,error line: %d\n",lineno);
+		std::cout << "Niewłaściwy zakres tablicy: " << sym_name << ", numer linii: " << lineno << std::endl;
 		tableErrors=tableErrors+1;
 	}
 	else
@@ -122,4 +113,9 @@ bool is_init(std::string sym_name)
 	int s;
 	s=getsym(sym_name);
 	return sym_tab[s].isInitialized;
+}
+int arrayIndex(std::string sym_name)
+{
+	int s = getsym (sym_name);
+	return sym_tab[s].firstIndex;
 }

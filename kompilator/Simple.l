@@ -1,4 +1,5 @@
 %option noyywrap
+%option yylineno
 %{
 #include <string.h>
 #include <stdlib.h> 
@@ -8,6 +9,7 @@
 NUM            -?([0-9]+)
 PIDENTIFIER    [_a-z]+
 
+%x COMMENT
 
 %%
 [ \t]+          ;
