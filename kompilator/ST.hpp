@@ -60,7 +60,7 @@ void init_var ( std::string sym_name, int lineno )
 	}
 	else 
 	{ 
-		std::cout << sym_name << " is already defined, error line:" << lineno << std::endl;
+		std::cout << sym_name << ": druga deklaracja, numer linii:" << lineno << std::endl;
 		tableErrors=tableErrors+1;
 	}
 }

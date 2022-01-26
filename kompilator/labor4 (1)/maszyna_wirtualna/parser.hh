@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_SIMPLE_TAB_HPP_INCLUDED
-# define YY_YY_SIMPLE_TAB_HPP_INCLUDED
+#ifndef YY_YY_PARSER_HH_INCLUDED
+# define YY_YY_PARSER_HH_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -44,73 +44,32 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 2 "Simple.ypp"
+#line 8 "parser.y"
+ 
+#include<vector> 
+#include<utility>
+using namespace std;
 
-    #include <string>
-    #include <vector>
-
-#line 53 "Simple.tab.hpp"
+#line 54 "parser.hh"
 
 /* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    num = 258,
-    pidentifier = 259,
-    FOR = 260,
-    IF = 261,
-    WHILE = 262,
-    REPEAT = 263,
-    DO = 264,
-    VAR = 265,
-    BEGINNER = 266,
-    END = 267,
-    THEN = 268,
-    ELSE = 269,
-    ENDIF = 270,
-    FROM = 271,
-    TO = 272,
-    DOWNTO = 273,
-    ENDFOR = 274,
-    ENDWHILE = 275,
-    UNTIL = 276,
-    READ = 277,
-    WRITE = 278,
-    LE = 279,
-    GE = 280,
-    LEQ = 281,
-    GEQ = 282,
-    EQ = 283,
-    NEQ = 284,
-    PLUS = 285,
-    MINUS = 286,
-    TIMES = 287,
-    DIV = 288,
-    MOD = 289,
-    ASSIGN = 290,
-    ERROR = 291
+    COM_0 = 258,
+    COM_1 = 259,
+    JUMP_1 = 260,
+    STOP = 261,
+    REG = 262,
+    LABEL = 263,
+    ERROR = 264
   };
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-#line 20 "Simple.ypp"
-union sem_rec
-{
-#line 21 "Simple.ypp"
-
-	std::string *pidentifier;
-    long long int num;
-    struct variable *variable;
-    struct condition *cond;
-    std::vector<std::string> *command;
-
-#line 110 "Simple.tab.hpp"
-
-};
-#line 20 "Simple.ypp"
-typedef union sem_rec YYSTYPE;
+typedef int YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -118,6 +77,6 @@ typedef union sem_rec YYSTYPE;
 
 extern YYSTYPE yylval;
 
-int yyparse (void);
+int yyparse (vector< pair<int,int> > & program);
 
-#endif /* !YY_YY_SIMPLE_TAB_HPP_INCLUDED  */
+#endif /* !YY_YY_PARSER_HH_INCLUDED  */

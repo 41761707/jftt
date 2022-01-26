@@ -17,20 +17,11 @@ g++ -o main Simple.tab.cpp Simple.tab.hpp lex.yy.c 2> /dev/null
 ./maszyna-wirtualna result.txt
 ./main 7-loopiii.imp result.txt
 ./maszyna-wirtualna result.txt
-./maszyna-wirtualna result.txt
 ./main 8-for.imp result.txt
 ./maszyna-wirtualna result.txt
 ./main 9-sort.imp result.txt
 ./maszyna-wirtualna result.txt
 ./main 10-div-mod.imp result.txt
-./maszyna-wirtualna result.txt
-./main program0.imp result.txt
-./maszyna-wirtualna result.txt
-./main program1.imp result.txt
-./maszyna-wirtualna result.txt
-./main program2.imp result.txt
-./maszyna-wirtualna result.txt
-./maszyna-wirtualna result.txt
 ./maszyna-wirtualna result.txt
 ./main 11-test-0.imp result.txt
 ./maszyna-wirtualna result.txt

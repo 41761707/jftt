@@ -12,6 +12,9 @@ PIDENTIFIER    [_a-z]+
 %x COMMENT
 
 %%
+\(              {BEGIN(COMMENT);}
+<COMMENT>\)     {BEGIN(INITIAL);}
+<COMMENT>(.|\n) ;
 [ \t]+          ;
 \n              ;
 "ASSIGN"          {return(ASSIGN);}

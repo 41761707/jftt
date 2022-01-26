@@ -11,7 +11,6 @@
 	#include <fstream>
 	#include "ST.hpp" 
 	#include "SM.hpp" 
-	#include "CG.hpp" 
 	#define YYDEBUG 1 
 	extern int yylineno;
 	void yyerror(char *s);
@@ -127,7 +126,7 @@ int main( int argc, char *argv[] )
 		{
 			outfile << command_list[i] << std::endl;
 		}
-		std::cout << "Kompilacja przeprowadzona pomyslnie";
+		std::cout << "Kompilacja przeprowadzona pomyslnie" << std::endl;
 	}
 	fclose(yyin);
 	outfile.close();
@@ -137,5 +136,5 @@ int main( int argc, char *argv[] )
 void yyerror(char *s)
 {
 	parserErrors++;
-	printf ("%s\n", s);
+	std::cout << s << ", numer linii: " << yylineno << std::endl;
 }
