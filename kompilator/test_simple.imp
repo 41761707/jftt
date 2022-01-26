@@ -1,7 +1,7 @@
-( Błąd w linii 5: niewłaściwe użycie zmiennej tablicowej b )
+( Błąd w linii 6: niewłaściwe użycie zmiennej a )
 VAR
-  a, b[-10:10]
+  a, b[1:20]
 BEGIN
-  b ASSIGN 1;
-  a ASSIGN b;
+  a ASSIGN 1;
+  a[1] ASSIGN b[a];
 END

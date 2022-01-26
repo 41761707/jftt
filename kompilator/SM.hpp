@@ -303,6 +303,7 @@ void read(var *name, int lineno)
 	{
 		int i=getsym(name->name);
 		generateConst(sym_tab[i].position);
+		sym_tab[i].isInitialized=true;
 	}
 	else if(name->type==ARRIND)
 	{
@@ -354,6 +355,16 @@ void write(var *current, int lineno)
 	else if(current->type==_VAR)
 	{
 		int i=getsym(current->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << current->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
+		if(sym_tab[i].isInitialized==false)
+		{
+			std::cout << "Użycie niezainicjowanej zmiennej: " << current->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
 		swap(registersTable[1]);
@@ -409,6 +420,12 @@ void assign(var *variable, var *expr, int lineno)
 		reset(registersTable[6]);
 		int i=getsym(variable->name);
 		generateConst(sym_tab[i].position);
+		sym_tab[i].isInitialized=true;
+		if(sym_tab[i].type==1)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej tablicowej: " << variable->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		swap(registersTable[6]);
 		reset(registersTable[0]);
 	}
@@ -416,6 +433,11 @@ void assign(var *variable, var *expr, int lineno)
 	{
 		reset(registersTable[6]);
 		int i=getsym(variable->name);
+		if(sym_tab[i].type==0)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej: " << variable->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=variable->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		generateConst(index);
@@ -425,6 +447,11 @@ void assign(var *variable, var *expr, int lineno)
 	{	
 		reset(registersTable[6]);
 		int i=getsym(variable->name);
+		if(sym_tab[i].type==0)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej: " << variable->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(variable->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -460,6 +487,21 @@ void assign(var *variable, var *expr, int lineno)
 	else if(expr->type==_VAR)
 	{
 		int newi=getsym(expr->name);
+		if(newi==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << expr->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
+		if(sym_tab[newi].isInitialized==false)
+		{
+			std::cout << "Użycie niezainicjowanej zmiennej: " << expr->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
+		if(sym_tab[newi].type==1)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej tablicowej: " << expr->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		generateConst(sym_tab[newi].position);
 		swap(registersTable[1]);
 		load(registersTable[1]);
@@ -469,6 +511,11 @@ void assign(var *variable, var *expr, int lineno)
 	{
 		reset(registersTable[4]);
 		int i=getsym(expr->name);
+		if(sym_tab[i].type==0)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej: " << expr->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(expr->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -497,6 +544,11 @@ void assign(var *variable, var *expr, int lineno)
 	{
 		reset(registersTable[5]);
 		int i=getsym(expr->name);
+		if(sym_tab[i].type==0)
+		{
+			std::cout << "Niewłaściwe użycie zmiennej: " << variable->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=expr->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		reset(registersTable[0]);
