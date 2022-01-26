@@ -420,6 +420,11 @@ void assign(var *variable, var *expr, int lineno)
 		reset(registersTable[6]);
 		int i=getsym(variable->name);
 		generateConst(sym_tab[i].position);
+		if(sym_tab[i].type==2 && sym_tab[i].isInitialized==true)
+		{
+			std::cout << "Zabroniona modyfikacja iteratora: " << variable->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		sym_tab[i].isInitialized=true;
 		if(sym_tab[i].type==1)
 		{
@@ -453,6 +458,11 @@ void assign(var *variable, var *expr, int lineno)
 			codeErrors=codeErrors+1;
 		}
 		int index=getsym(variable->index);
+		if(index==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << variable->index << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
 		swap(registersTable[6]);
@@ -517,6 +527,11 @@ void assign(var *variable, var *expr, int lineno)
 			codeErrors=codeErrors+1;
 		}
 		int index=getsym(expr->index);
+		if(index==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << expr->index << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
 		swap(registersTable[4]);
@@ -1139,8 +1154,8 @@ void for_to(std::string name, var *v1, var *v2, int lineno)
 	iter.value=v1->value;
 	iter.type=_VAR;
 	iterators.push_back(iter);
-	init_var(iter.name,lineno);
-	init_var(iter.name+"temp",lineno);
+	init_iter(iter.name,lineno);
+	init_iter(iter.name+"temp",lineno);
 	var *current_var;
 	current_var=new var;
 	current_var->name=iter.name;
@@ -1168,8 +1183,8 @@ void for_downto(std::string name, var *v1, var *v2, int lineno)
 	iter.value=v1->value;
 	iter.type=_VAR;
 	iterators.push_back(iter);
-	init_var(iter.name,lineno);
-	init_var(iter.name+"temp",lineno);
+	init_iter(iter.name,lineno);
+	init_iter(iter.name+"temp",lineno);
 	var *current_var;
 	current_var=new var;
 	current_var->name=iter.name;

@@ -1,7 +1,10 @@
-( Błąd w linii 6: niewłaściwe użycie zmiennej a )
+( Błąd w linii 7: zabroniona modyfikacja iteratora i )
 VAR
-  a, b[1:20]
+  a, b[10:10]
 BEGIN
-  a ASSIGN 1;
-  a[1] ASSIGN b[a];
+  FOR i FROM 0 TO 9 DO 
+    b[i] ASSIGN i TIMES i;
+    i ASSIGN i PLUS 2;
+  ENDFOR
+  a ASSIGN b[1];
 END

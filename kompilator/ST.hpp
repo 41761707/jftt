@@ -7,7 +7,7 @@
 
 long long offset=0;
 
-enum symtype {VARIABLE,ARRAY};
+enum symtype {VARIABLE,ARRAY,ITER};
 
 int tableErrors=0;
 
@@ -57,6 +57,20 @@ void init_var ( std::string sym_name, int lineno )
 	if (s == -1)
 	{
 		putsym(sym_name,1,1,VARIABLE);
+	}
+	else 
+	{ 
+		std::cout << sym_name << ": druga deklaracja, numer linii:" << lineno << std::endl;
+		tableErrors=tableErrors+1;
+	}
+}
+void init_iter(std::string sym_name, int lineno)
+{
+	int s=-1;
+	s = getsym (sym_name);
+	if (s == -1)
+	{
+		putsym(sym_name,1,1,ITER);
 	}
 	else 
 	{ 
