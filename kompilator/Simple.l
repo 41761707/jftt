@@ -57,7 +57,7 @@ PIDENTIFIER    [_a-z]+
 "ENDIF"           {return(ENDIF);}
 
 {PIDENTIFIER}     { yylval.pidentifier = new std::string(yytext);return(pidentifier); }
-{NUM}		        { yylval.num = atoi( yytext );return(num); }
+{NUM}		        { yylval.num = atoll( yytext );return(num); }
 \(.*\)          ;
 .               return(yytext[0]);
 

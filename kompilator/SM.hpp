@@ -6,19 +6,31 @@
 #include <unistd.h>
 #include <fstream>
 #include <cmath>
+#include <climits>
 #include <sstream>
 #include <algorithm>
 #include <vector>
 
+/* Zmienna przechowująca informację o liczbie występujących błędów w kodzie */
+/* Wynik analizy syntaktycznej */
 int codeErrors=0;
+/* Wektor przechowujący komendy dla maszyny wirtualnej */
 std::vector<std::string> command_list;
 
 
+/* Struktura przedstawiająca rejestry */
 struct registers
 {
 	std::string registerName;
 };
 
+/*Typ wyliczeniowy przedstawiający różne typy zmiennych występujacych w programie:
+* VAL- stała wartość liczbowa (20,100,-100)
+* _VAR- zmienna (a,dzielnik,i)
+* ARR - zmienna tablicowa(t[3], tab[10], arr[-15])
+* ARRIND - zmienna tablicowa z indeksem w postaci zmiennej (t[a], tab[b], arr[z])
+* EXPR - wynik działanai 
+*/
 enum var_type
 {
     VAL,
@@ -28,6 +40,12 @@ enum var_type
     EXPR
 };
 
+/*Struktura variable przedstawiająca pojedynczą zmienną
+* name- nazwa zmiennej
+* index- stosowane dla przypadku ARRIND, nazwa zmiennej
+* value- stosowane dla przypadku VAL bądź ARR, wartość stałej bądź indeksu tablicy
+* type- typ zmiennej (któryś z typu wyliczeniowego var_type)
+*/
 struct variable
 {
     std::string name;
@@ -37,7 +55,14 @@ struct variable
 };
 typedef struct variable var;
 
+/*Wektor składający się z zadeklarowanych iteratorów pętli FOR */
 std::vector<variable>iterators;
+/*Struktura condition przedstawiająca pojedynczą instrukcję warunkową 
+* name- nazwa (LEQ,GEQ,...)
+* pre_cond_index- index przed wykonaniem pierwszej operacji w ramach instrukcji warunkowej
+* post_cond_index- index po wykonaniu pierwszej operacji w ramach instrukcji warunkowej
+* pojęcie index odnosi się do aktualnej pozycji względem rozmiaru wektora command_list
+*/
 struct condition
 {
     std::string name;
@@ -46,8 +71,15 @@ struct condition
 };
 typedef struct condition condition;
 
+/*Wektor składający się z zadeklarowanych instrukcji warunkowych */
 std::vector<condition> condition_start;
 
+/* Struktura forLabel przedstawiająca pojedynczą pętle FOR
+*  name- nazwa zmiennej iteracyjnej
+*  startValue- początkowa wartość zmiennej iteracyjnej
+*  stopValue- koncowa wartosc zmiennej iteracyjnej
+*  index- pozycja zmiennej FOR względem wektora command_list
+*/
 struct forLabel
 {
 	std::string name;
@@ -58,12 +90,14 @@ struct forLabel
 };
 typedef struct forLabel forLabel;
 
+/*Wektor złożony z zadeklarowanych pętel FOR */
 std::vector<forLabel> forLabel_start;
 
 typedef struct registers registers;
+/* Tablica rejestrów */
 registers registersTable[8];
 
-
+//Funkcja odpowiedzialna za inicjację rejestrów
 void init_registers()
 {
 	registersTable[0].registerName="a";
@@ -79,16 +113,11 @@ void init_registers()
 	forLabel forLabel;
 	forLabel_start.push_back(forLabel);
 }
+/*Funkcja odpowiedzialna za zamianę liczby na jej binarny odpowiednik
+*	@param number- liczba, której zapis binarny chcemy otrzymać
+*	@return result- binarny zapis liczby
+*/
 
-void test_print()
-{
-	for(int i=0;i<sym_tab.size();i++)
-	{
-		std::cout << i << ", " << sym_tab[i].name << std::endl;
-		std::cout << "Length: " << sym_tab[i].length << ", FirstIndex:" << sym_tab[i].firstIndex << std::endl;
-		std::cout << "Position: " << sym_tab[i].position << std::endl;
-	}
-}
 std::string decToBin(long long number)
 {
 	std::string result="";
@@ -107,11 +136,11 @@ std::string decToBin(long long number)
 	return result;
 }
 /* COMMANDS */
+/* Dosłowna implementacja podanych w specyfikacji instrukcji maszyny */
 /*----------------------------*/
 void halt()
 {
 	command_list.push_back("HALT");
-	//test_print();
 }
 void reset(registers &reg)
 {
@@ -182,7 +211,11 @@ void jneg(long long j)
 }
 /*----------------------------*/
 
-var *func_num(long long int value, int lineno)
+/*Funkcja odpowiedzialna za inicjację wartości stałej
+*	@param value- wartość stałej
+*	@param lineno- aktualny numer linii
+*/
+var *func_num(long long value, int lineno)
 {
 	var *current_var;
 	current_var=new var;
@@ -191,6 +224,10 @@ var *func_num(long long int value, int lineno)
 	return current_var;
 }
 
+/*Funkcja odpowiedzialna za inicjację zmiennej
+*	@param name- nazwa zmiennej
+*	@param lineno- aktualny numer linii
+*/
 var *func_pid(std::string name, int lineno)
 {
 	var *current_var;
@@ -201,6 +238,11 @@ var *func_pid(std::string name, int lineno)
 	return current_var;
 }
 
+/*Funkcja odpowiedzialna za inicjację zmiennej tablicowej z indeksem w formie zmiennej
+*	@param name- nazwa zmiennej tablicowej
+*	@param index- index tablicy w formie zmiennej
+*	@param lineno- aktualny numer linii
+*/
 var *func_pid_arr(std::string name, std::string index, int lieno)
 {
 	var *current_var;
@@ -212,19 +254,26 @@ var *func_pid_arr(std::string name, std::string index, int lieno)
 	return current_var;
 
 }
-
+/*Funkcja odpowiedzialna za inicjację zmiennej tablicowej
+*	@param name- nazwa zmiennej tablicowej
+*	@param index- index tablicy
+*	@param lineno- aktualny numer linii
+*/
 var *func_pid(std::string name, long long index, int lineno)
 {
 	var *current_var;
 	current_var=new var;
 	current_var->name=name;
 	current_var->index="";
-	current_var->type=ARR;  //TU UWAGA
+	current_var->type=ARR; 
 	current_var->value=index;
 	return current_var;
 
 }
 
+/*Generowanie stałej wartości
+* @param value- wartość do wygenerowania 
+*/
 void generateConst(long long value)
 {
 	if(value<0)
@@ -296,12 +345,21 @@ void generateConst(long long value)
 
 /*GRAMMAR FUNCTIONS */
 /*----------------------------*/
+/* Funkcja odpowiedzialna za wczytywanie danych ze strumienia wejściowego
+*	@param name- nazwa zmiennej, do której zostaną wprowadzone dane
+*	@param lineno- aktualny numer linii
+*/
 void read(var *name, int lineno)
 {
 	reset(registersTable[0]);
 	if(name->type==_VAR)
 	{
 		int i=getsym(name->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << name->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		generateConst(sym_tab[i].position);
 		sym_tab[i].isInitialized=true;
 	}
@@ -309,6 +367,11 @@ void read(var *name, int lineno)
 	{
 		reset(registersTable[6]);
 		int i=getsym(name->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << name->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(name->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -331,6 +394,15 @@ void read(var *name, int lineno)
 	else if(name->type==ARR)
 	{
 		int i=getsym(name->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << name->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
+		if(name->value < sym_tab[i].firstIndex || name->value >= sym_tab[i].firstIndex+sym_tab[i].length)
+		{
+			std::cout << "Odwołanie do nieistniejącej komórki tablicy: " << name->name << ", numer linii: " << lineno << std::endl;
+		}
 		int index=name->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		generateConst(index);
@@ -342,6 +414,10 @@ void read(var *name, int lineno)
 	store(registersTable[1]);
 
 }
+/* Funkcja odpowiedzialna za wypisywanie danych do strumienia wyjściowego
+*	@param current- nazwa zmiennej, której zawartość zostanie wypisana
+*	@param lineno- aktualny numer linii
+*/
 void write(var *current, int lineno)
 {
 	reset(registersTable[0]);
@@ -374,6 +450,15 @@ void write(var *current, int lineno)
 	else if(current->type==ARR)
 	{
 		int i=getsym(current->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << current->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
+		if(current->value < sym_tab[i].firstIndex || current->value >= sym_tab[i].firstIndex+sym_tab[i].length)
+		{
+			std::cout << "Odwołanie do nieistniejącej komórki tablicy: " << current->name << ", numer linii: " << lineno << std::endl;
+		}
 		int index=current->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		reset(registersTable[0]);
@@ -387,6 +472,11 @@ void write(var *current, int lineno)
 	{
 		reset(registersTable[6]);
 		int i=getsym(current->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << current->name << ", numer linii: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(current->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -412,6 +502,11 @@ void write(var *current, int lineno)
 
 	}
 }
+/* Funkcja odpowiedzialna za przypisanie zmiennej odpowiedniej wartości
+*	@param variable- nazwa zmiennej, do której zostanie przypisana wartość
+*	@param expr- zmienna, której wartość zostanie przypisana innej zmiennej
+*	@param lineno- aktualny numer linii
+*/
 void assign(var *variable, var *expr, int lineno)
 {
 	reset(registersTable[0]);
@@ -573,6 +668,11 @@ void assign(var *variable, var *expr, int lineno)
 		store(registersTable[6]);
 	}
 }
+/* Funkcja odpowiedzialna za wczytanie wartości do odpowiednich rejestrów
+*	@param v1- pierwsza zmienna, wczytana do rejestru 6
+*	@param v2- druga zmienna, wczytana do rejestru 0
+*	@param lineno- aktualny numer linii
+*/
 void load_var(var *v1, var *v2, int lineno)
 {
 	reset(registersTable[0]);
@@ -581,7 +681,7 @@ void load_var(var *v1, var *v2, int lineno)
 		int i=getsym(v1->name);
 		if(i==-1)
 		{
-			std::cout << "Nierozpoznana zmienna: " << v1->name << ", linia: " << lineno << std::endl;
+			std::cout << "Niezadeklarowana zmienna: " << v1->name << ", linia: " << lineno << std::endl;
 			codeErrors=codeErrors+1;
 		}
 		reset(registersTable[0]);
@@ -600,6 +700,11 @@ void load_var(var *v1, var *v2, int lineno)
 	{
 		reset(registersTable[4]);
 		int i=getsym(v1->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << v1->name << ", linia: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(v1->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -626,6 +731,11 @@ void load_var(var *v1, var *v2, int lineno)
 	else if(v1->type=ARR)
 	{
 		int i=getsym(v1->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << v1->name << ", linia: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=v1->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		reset(registersTable[0]);
@@ -639,6 +749,11 @@ void load_var(var *v1, var *v2, int lineno)
 	if(v2->type==_VAR)
 	{
 		int i=getsym(v2->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << v2->name << ", linia: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
 		reset(registersTable[5]);
@@ -653,6 +768,11 @@ void load_var(var *v1, var *v2, int lineno)
 	{
 		reset(registersTable[4]);
 		int i=getsym(v2->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << v2->name << ", linia: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=getsym(v2->index);
 		reset(registersTable[0]);
 		generateConst(sym_tab[i].position);
@@ -678,6 +798,11 @@ void load_var(var *v1, var *v2, int lineno)
 	else if(v2->type=ARR)
 	{
 		int i=getsym(v2->name);
+		if(i==-1)
+		{
+			std::cout << "Niezadeklarowana zmienna: " << v2->name << ", linia: " << lineno << std::endl;
+			codeErrors=codeErrors+1;
+		}
 		int index=v2->value-sym_tab[i].firstIndex;
 		index=sym_tab[i].position+index;
 		reset(registersTable[0]);
@@ -687,6 +812,11 @@ void load_var(var *v1, var *v2, int lineno)
 		load(registersTable[5]);
 	}
 }
+/* Funkcja odpowiedzialna za przeprowadzanie dodawania dwóch zmiennych
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *func_plus( var *v1, var *v2, int lineno)
 {
 	load_var(v1,v2,lineno);
@@ -695,6 +825,11 @@ void *func_plus( var *v1, var *v2, int lineno)
 	swap(registersTable[5]);
 	v1->type=EXPR;
 }
+/* Funkcja odpowiedzialna za przeprowadzanie odejmowania dwóch zmiennych
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *func_minus( var *v1, var *v2, int lineno)
 {
 	load_var(v1,v2,lineno);
@@ -705,6 +840,11 @@ void *func_minus( var *v1, var *v2, int lineno)
 	v1->type=EXPR;
 
 }
+/* Funkcja odpowiedzialna za przeprowadzanie mnożenia dwóch zmiennych
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *func_times( var *v1, var *v2, int lineno)
 {
 
@@ -776,6 +916,11 @@ void *func_times( var *v1, var *v2, int lineno)
 	v1->type=EXPR;
 
 }
+/* Funkcja odpowiedzialna za przeprowadzanie dzielenia dwóch zmiennych
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *func_div(var *v1, var *v2, int lineno)
 {
 	load_var(v1,v2,lineno);
@@ -859,6 +1004,11 @@ void *func_div(var *v1, var *v2, int lineno)
 	swap(registersTable[5]);
 	v1->type=EXPR;
 }
+/* Funkcja odpowiedzialna za przeprowadzanie operacji reszty z dzielenia dwóch zmiennych
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *func_mod(var *v1, var *v2, int lineno)
 {
 	func_div(v1,v2,lineno);
@@ -888,6 +1038,11 @@ void *func_mod(var *v1, var *v2, int lineno)
 	swap(registersTable[5]);
 	v1->type=EXPR;
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej EQ
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_eq(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -902,6 +1057,11 @@ void *condition_eq(var *v1,var *v2, int lineno)
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej NEQ
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_neq(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -916,6 +1076,11 @@ void *condition_neq(var *v1,var *v2, int lineno)
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej LE
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_le(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -930,6 +1095,11 @@ void *condition_le(var *v1,var *v2, int lineno)
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej GE
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_ge(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -944,6 +1114,11 @@ void *condition_ge(var *v1,var *v2, int lineno)
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej LEQ
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_leq(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -958,6 +1133,11 @@ void *condition_leq(var *v1,var *v2, int lineno)
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej GEQ
+*	@param v1- pierwsza zmienna
+*	@param v2- druga zmienna
+*	@param lineno- aktualny numer linii
+*/
 void *condition_geq(var *v1,var *v2, int lineno)
 {
 	condition cond;
@@ -973,6 +1153,7 @@ void *condition_geq(var *v1,var *v2, int lineno)
 	condition_start.push_back(cond);
 }
 
+/* Funkcja odpowiedzialna za przetworzenie instrukcji warunkowej */
 void func_if()
 {
 	long long commandListSize=command_list.size()-1;
@@ -1008,6 +1189,7 @@ void func_if()
 		command_list[if_start.post_cond_index]="JNEG " + std::to_string(j);
 	}
 }
+/* Funkcja odpowiedzialna za poprawne zakończenie instrukcji warunkowej */
 void func_endif()
 {
 	long long commandListSize=command_list.size()-1;
@@ -1016,6 +1198,7 @@ void func_endif()
 	long long j=commandListSize-if_start.post_cond_index+1;
 	command_list.insert(command_list.begin()+if_start.post_cond_index+1, "JUMP " + std::to_string(j));
 }
+/* Funkcja odpowiedzialna za utworzenie poprawnego "rozgałęzienia" instrukcji warunkowej */
 void func_else()
 {
 	long long commandListSize=command_list.size()-1;
@@ -1062,6 +1245,7 @@ void func_else()
 	}
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za poprawne przetworzenie pętli WHILE */
 void func_while()
 {
 	long long commandListSize=command_list.size()-1;
@@ -1100,6 +1284,7 @@ void func_while()
 		command_list[if_start.post_cond_index]="JNEG " + std::to_string(j);
 	}
 }
+/* Funkcja odpowiedzialna za poprawne przetworzenie pętli REPEAT...UNTIL */
 void func_repeat()
 {
 	condition cond;
@@ -1108,6 +1293,7 @@ void func_repeat()
 	cond.post_cond_index=command_list.size()-1;
 	condition_start.push_back(cond);
 }
+/* Funkcja odpowiedzialna za poprawne zakończenie pętli REPEAT...UNTIL */
 void func_until()
 {
 	long long commandListSize=command_list.size()-1;
@@ -1146,7 +1332,7 @@ void func_until()
 }
 
 
-//ASSIGN for FOR temporary solution
+/* Funkcja odpowiedzialna za poprawne przetworzenie pętli FOR...FROM...TO */
 void for_to(std::string name, var *v1, var *v2, int lineno)
 {
 	variable iter;
@@ -1176,6 +1362,7 @@ void for_to(std::string name, var *v1, var *v2, int lineno)
 	label.index=command_list.size()-1;
 	forLabel_start.push_back(label);
 }
+/* Funkcja odpowiedzialna za poprawne przetworzenie pętli FOR...FROM...DOWNTO */
 void for_downto(std::string name, var *v1, var *v2, int lineno)
 {
 	variable iter;
@@ -1205,6 +1392,7 @@ void for_downto(std::string name, var *v1, var *v2, int lineno)
 	label.index=command_list.size()-1;
 	forLabel_start.push_back(label);
 }
+/* Funkcja odpowiedzialna za poprawne zakończenie pętli FOR...FROM...TO */
 void endfor_to()
 {
 	variable iter=iterators[iterators.size()-1];
@@ -1231,6 +1419,7 @@ void endfor_to()
 
 
 }
+/* Funkcja odpowiedzialna za poprawne zakończenie pętli FOR...FROM...DOWNTO */
 void endfor_downto()
 {
 	variable iter=iterators[iterators.size()-1];

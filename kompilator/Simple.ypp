@@ -20,10 +20,9 @@
 %union sem_rec
 {
 	std::string *pidentifier;
-    long long int num;
+    long long num;
     struct variable *variable;
     struct condition *cond;
-    std::vector<std::string> *command;
 }
 %start program
 %token <num> num
@@ -44,8 +43,6 @@
 %type <variable> identifier
 %type <variable> expression
 %type <cond> condition
-%type <command> command
-%type <command> commands
 
 
 %left PLUS MINUS

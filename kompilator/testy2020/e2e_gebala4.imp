@@ -1,0 +1,22 @@
+VAR
+    a, b, c, r, p, w
+BEGIN
+    READ a;
+    READ b;
+    READ c;
+    r ASSIGN 1;
+    p ASSIGN a MOD c;
+
+    WHILE b GE 0 DO
+        w ASSIGN b MOD 2;
+        IF w EQ 1 THEN
+            r ASSIGN r TIMES p;
+            r ASSIGN r MOD c;
+        ENDIF
+        b ASSIGN b DIV 2;
+        p ASSIGN p TIMES p;
+        p ASSIGN p MOD c;
+    ENDWHILE
+
+    WRITE r;
+END
